@@ -13,6 +13,7 @@ import LockEditorPlugin from './LockEditorPlugin';
 import TextChoicePlugin from './ai/TextChoicePlugin';
 import { NodeEventPlugin } from "@lexical/react/LexicalNodeEventPlugin";
 import TextChoiceNode from './ai/TextChoiceNode';
+import SuggestionNode from './ai/SuggestionNode';
 
 export default function Editor({session, ...props}: {session: Session} & Props) {
 
@@ -36,7 +37,7 @@ export default function Editor({session, ...props}: {session: Session} & Props) 
             }
         },
         nodes: [
-            TextChoiceNode
+            SuggestionNode
         ]
     }
 

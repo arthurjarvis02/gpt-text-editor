@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { reset, setAcceptedStatus, setAllAcceptedStatuses } from "@/lib/features/ai/aiSlice";
+import { reset, setAccepted, setAllAccepted } from "@/lib/features/ai/aiSlice";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { ArrowLeft, Check, CheckCheck, LoaderCircle, Save, Sparkles, X } from "lucide-react";
@@ -13,7 +13,7 @@ import { $createTextNode, $getRoot } from "lexical";
 export default function AiToolbar() {
 
     const loading = useAppSelector(state => state.ai.loading);
-    const edits = useAppSelector(state => state.ai.edits);
+    const suggestions = useAppSelector(state => state.ai.suggestions);
     const dispatch = useAppDispatch();
     const [editor] = useLexicalComposerContext();
 
@@ -28,16 +28,16 @@ export default function AiToolbar() {
 
         editor.update(() => {
 
-            for (const node of $getRoot().getAllTextNodes()) {
+            // for (const node of $getRoot().getAllTextNodes()) {
 
-                if (node instanceof TextChoiceNode) {
+            //     if (node instanceof TextChoiceNode) {
 
-                    const edit = edits.find(edit => edit.id === node.editId);
-                    if (!edit) continue;
+            //         const suggestions = suggestions.find(suggestion => suggestion.id === node.editId);
+            //         if (!edit) continue;
 
-                    node.replace($createTextNode(edit.accepted ? node.newText : node.originalText));
-                }
-            }
+            //         node.replace($createTextNode(suggestion.accepted ? node.newText : node.originalText));
+            //     }
+            // }
         });
 
         dispatch(reset());
@@ -57,11 +57,11 @@ export default function AiToolbar() {
 
             <div className="w-1" />
 
-            <Button variant="ghost" size="sm" onClick={() => dispatch(setAllAcceptedStatuses(false))}>
+            <Button variant="ghost" size="sm" onClick={() => dispatch(setAllAccepted(false))}>
                 <X className="w-4 h-4 mr-2" />
                 Reject all
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => dispatch(setAllAcceptedStatuses(true))}>
+            <Button variant="ghost" size="sm" onClick={() => dispatch(setAllAccepted(true))}>
                 <Check className="w-4 h-4 mr-2" />
                 Accept all
             </Button>

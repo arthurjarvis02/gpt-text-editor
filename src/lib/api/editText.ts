@@ -6,13 +6,10 @@ import { PromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { Change, diffWords, diffWordsWithSpace } from "diff";
   
-export type Edit = {
-    id: string;
+export type Suggestion = {
     startCharacter: number;
     endCharacter: number;
-    originalText: string;
     newText: string;
-    accepted: boolean;
 }
 
 const chain = RunnableSequence.from([
@@ -81,7 +78,7 @@ function groupChanges(changes: Change[]): Change[][] {
     return groups;
 }
 
-function combineGroups(groups: Change[][]): Edit[] {
+function combineGroups(groups: Change[][]): Suggestion[] {
 
     const edits = [];
     let currentCharacter = 0;
@@ -115,13 +112,13 @@ function combineGroups(groups: Change[][]): Edit[] {
         const id = `${startCharacter}-${endCharacter}`;
         const accepted = true;
 
-        (group.length > 1 || group[0].added || group[0].removed) && edits.push({id, startCharacter, endCharacter, newText, originalText, accepted});
+        (group.length > 1 || group[0].added || group[0].removed) && edits.push({startCharacter, endCharacter, newText});
     }
 
     return edits;
 }
 
-export async function editText(prompt: string, original_text: string): Promise<Edit[]> {
+export async function editText(prompt: string, original_text: string): Promise<Suggestion[]> {
 
     const edited_text = await chain.invoke({prompt, original_text});
     

@@ -4,7 +4,7 @@ import { Button, ButtonProps } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { PopoverClose } from "@radix-ui/react-popover";
-import { $applyNodeReplacement, $createParagraphNode, $createPoint, $createRangeSelection, $createTextNode, $getRoot, $getSelection, $insertNodes, $isElementNode, $isRangeSelection, $isTextNode, $selectAll, $setSelection, RangeSelection } from "lexical";
+import { $applyNodeReplacement, $createParagraphNode, $createPoint, $createRangeSelection, $createTextNode, $getNodeByKey, $getRoot, $getSelection, $insertNodes, $isElementNode, $isRangeSelection, $isTextNode, $selectAll, $setSelection, RangeSelection } from "lexical";
 import { Sparkles } from "lucide-react";
 import { useAppDispatch } from "@/lib/hooks";
 import { fetchEdits } from "@/lib/features/ai/aiSlice";
@@ -27,11 +27,24 @@ export default function AiMenuButton({children, ...props}: ButtonProps) {
             if (!$isRangeSelection(selection)) return;
 
             const originalText = selection.getTextContent();
-            const points = selection.getStartEndPoints()
 
+            const points = selection.getStartEndPoints()
             if (!points) return;
 
-            const startPoint = points[selection.isBackward() ? 1 : 0];
+            let startPoint = points[selection.isBackward() ? 1 : 0];
+
+            const startNode = $getNodeByKey(startPoint.key);
+            if (!startNode) return;
+
+            if ($isTextNode(startNode)) {
+
+                const parentNode = startNode.getParent();
+                if (!parentNode) return;
+
+                startPoint = $createPoint(parentNode.getKey(), startNode.getIndexWithinParent(), "element");
+            }
+
+            console.log(startPoint);
 
             dispatch(fetchEdits({prompt, originalText, startPoint: {key: startPoint.key, offset: startPoint.offset, type: startPoint.type}}));
         });

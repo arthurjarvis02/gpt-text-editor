@@ -1,91 +1,43 @@
 "use client";
 
-import { SerializedPointType, setAcceptedStatus, setStartPoint } from "@/lib/features/ai/aiSlice";
+import { SerializedPointType, setAccepted, setStartPoint } from "@/lib/features/ai/aiSlice";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $createNodeSelection, $createParagraphNode, $createPoint, $createRangeSelection, $createTextNode, $getNodeByKey, $getRoot, $getSelection, $isElementNode, $isRangeSelection, $isTextNode, $parseSerializedNode, $selectAll, $setSelection, ElementNode, LexicalNode, PointType, RangeSelection, RootNode, TextNode } from "lexical";
 import { useEffect } from "react";
 import TextChoiceNode from "./TextChoiceNode";
 import { NodeEventPlugin } from "@lexical/react/LexicalNodeEventPlugin";
+import SuggestionNode, { $createSuggestionNode } from "./SuggestionNode";
 
 export default function TextChoicePlugin() {
 
     const [editor] = useLexicalComposerContext();
-    const edits = useAppSelector(state => state.ai.edits);
+    const suggestions = useAppSelector(state => state.ai.suggestions);
     const startPoint = useAppSelector(state => state.ai.startPoint);
-    const loading = useAppSelector(state => state.ai.loading);
     const dispatch = useAppDispatch();
 
     useEffect(() => {
 
-        console.log("Edits:", JSON.stringify(edits, null, 2));
-        
         editor.update(() => {
 
-            const renderedEditIds: string[] = [];
+            if (!startPoint) return;
 
-            for (const node of $getRoot().getAllTextNodes()) {
+            console.log(suggestions);
 
-                if (node instanceof TextChoiceNode) {
+            for (const suggestion of suggestions) {
 
-                    const stateEdit = edits.find(edit => edit.id === node.editId);
+                console.log("Looking for edit", suggestion.newText);
 
-                    if (!stateEdit) {
-
-                        const newNode = $createTextNode(node.__text);
-                        newNode.setFormat(node.__format);
-
-                        const parent = node.getParentOrThrow();
-
-                        const selection = $createRangeSelection();
-                        selection.anchor = $createPoint(node.__key, 0, "text");
-                        selection.focus = $createPoint(node.__key, node.getTextContentSize(), "text");
-
-                        console.log(selection.extract());
-        
-                        selection.removeText();
-
-                        console.log("Removed edit", node.editId, "from the editor")
-
-                        continue;
-                    }
-
-                    renderedEditIds.push(node.editId);
-
-                    console.log("Found edit", node.originalText, node.newText, "in the editor")
-
-                    if (stateEdit.accepted !== node.accepted) {
-
-                        console.log("Updating edit", node.editId, "to", stateEdit.accepted)
-
-                        const newNode = new TextChoiceNode(node.__text, node.originalText, node.newText, stateEdit.accepted, node.editId, node.__format);
-                        node.replace(newNode);
-                    }
-                }
-            }
-
-            if (renderedEditIds.length > 0 || !startPoint) return;
-
-            console.log("Rendering new")
-
-            const unrenderedEdits = edits.filter(edit => !renderedEditIds.includes(edit.id));
-
-            let updatedStartPoint = startPoint;
-
-            for (const edit of unrenderedEdits) {
-
-                console.log("Looking for edit", edit.originalText, edit.newText);
-
-                const selection = $getSelectionToEnd(updatedStartPoint);
+                const selection = $getSelectionToEnd(startPoint);
                 const nodes = selection.extract();
+
+                console.log(nodes);
 
                 const nodeTree = constructTextNodeTree(nodes);
                 console.log("Node tree", JSON.stringify(nodeTree, null, 2));
 
-                const startOffset = updatedStartPoint.offset;
-
-                const start = findPointByCharacterIndex(nodeTree, edit.startCharacter);
-                const end = findPointByCharacterIndex(nodeTree, edit.endCharacter);
+                const start = findPointByCharacterIndex(nodeTree, suggestion.startCharacter);
+                const end = findPointByCharacterIndex(nodeTree, suggestion.endCharacter);
 
                 console.log("Start point", start, "End point", end);
 
@@ -94,65 +46,92 @@ export default function TextChoicePlugin() {
                 const splice = $createRangeSelection();
                 splice.anchor = start;
                 splice.focus = end;
+
                 const spliceExtracted = splice.extract();
 
-                console.log("Text in splice:", splice.getTextContent());
+                let suggestionNode: SuggestionNode | null = null;
+                let prevParent: ElementNode | null = null;
 
-                const format = spliceExtracted.length == 1 && spliceExtracted[0] instanceof TextNode ? spliceExtracted[0].__format : 0;
+                spliceExtracted.forEach((node) => {
 
-                const newNode = new TextChoiceNode(
-                    splice.getTextContent(),
-                    edit.originalText,
-                    edit.newText,
-                    edit.accepted,
-                    edit.id,
-                    format,
-                );
+                    const parent = node.getParent();
+              
+                    if (parent === suggestionNode || parent === null || ($isElementNode(node) && !node.isInline())) return;
+              
+                    if (parent instanceof SuggestionNode) {
+                        suggestionNode = parent;
+                        parent.setAccepted(suggestion.accepted);
+                        return;
+                    }
+              
+                    if (!parent.is(prevParent)) {
+                        
+                        prevParent = parent;
+                        suggestionNode = $createSuggestionNode(suggestion);
+                
+                        if (parent instanceof SuggestionNode) {
 
-                const startNode = $getNodeByKey(start.key);
+                            if (node.getPreviousSibling() === null) {
 
-                if (start.key == updatedStartPoint.key && $isTextNode(startNode) && startNode.getTextContentSize() == edit.endCharacter - edit.startCharacter) {
+                                parent.insertBefore(suggestionNode);
+    
+                            } else {
 
-                    startNode.replace(newNode);
-                    
-                } else {
+                                parent.insertAfter(suggestionNode);
+                            }
 
-                    splice.insertNodes([newNode]);
-                }
+                        } else {
 
-                console.log("Start:", start, "startPoint of selection:", updatedStartPoint);
+                            node.insertBefore(suggestionNode);
+                        }
+                    }
+              
+                    if (node instanceof SuggestionNode) {
 
-                if (start.key == updatedStartPoint.key && start.offset == updatedStartPoint.offset && start.type == updatedStartPoint.type && start.type == "text") { // We need to update the startPoint
+                        if (node.is(suggestionNode)) return;
 
-                    console.log("Inserting new start point")
-                    updatedStartPoint = {key: newNode.__key, offset: 0, type: "text"};
-                    console.log("Updated start point")
-                }
+                        if (suggestionNode !== null) {
+
+                            const children = node.getChildren();
+                
+                            for (let i = 0; i < children.length; i++) {
+
+                                suggestionNode.append(children[i]);
+                            }
+                        }
+                
+                        node.remove();
+                        return;
+                    }
+              
+                    if (suggestionNode !== null) {
+
+                        suggestionNode.append(node);
+                    }
+                });
             }
-        });
+        })
 
-    }, [edits]);
+    }, [suggestions]);
 
     const handleClick = (nodeKey: string) => {
 
         editor.update(() => {
 
             const node = $getNodeByKey(nodeKey);
-            if (node instanceof TextChoiceNode) {
+            
+            if (node instanceof SuggestionNode) {
 
-                console.log(node.editId, "click detected");
+                console.log(node.suggestionId, "click detected");
 
-                //const newNode = new TextChoiceNode(node.__text, node.originalText, node.newText, !node.accepted, node.editId);
-                //node.replace(newNode);
-
-                dispatch(setAcceptedStatus({id: node.editId, accepted: !node.accepted}));
+                dispatch(setAccepted({id: node.suggestionId, accepted: !node.accepted}));
             }
         });
     };
     
     return (
         <NodeEventPlugin
-            nodeType={TextChoiceNode}
+            nodeType={SuggestionNode}
             eventType="click"
             eventListener={(_, editor, nodeKey) => handleClick(nodeKey)}
         />

@@ -1,4 +1,4 @@
-import { Edit, editText } from "@/lib/api/editText";
+import { Suggestion, editText } from "@/lib/api/editText";
 import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 const fetchEdits = createAsyncThunk(
@@ -9,6 +9,11 @@ const fetchEdits = createAsyncThunk(
     }
 )
 
+export type ClientSuggestion = Suggestion & {
+    id: string;
+    accepted: boolean;
+}
+
 export type SerializedPointType = {
     key: string;
     offset: number;
@@ -18,14 +23,14 @@ export type SerializedPointType = {
 interface AiState {
     inAiMode: boolean;
     loading: boolean;
-    edits: Edit[];
+    suggestions: ClientSuggestion[];
     startPoint: SerializedPointType | null;
 }
 
 const initialState: AiState = {
     inAiMode: false,
     loading: false,
-    edits: [],
+    suggestions: [],
     startPoint: null
 }
 
@@ -37,16 +42,13 @@ export const aiSlice = createSlice({
         setStartPoint: (state, action: PayloadAction<SerializedPointType>) => {
             state.startPoint = action.payload;
         },
-        setAcceptedStatus(state, action: PayloadAction<{id: string, accepted: boolean}>) {
-            const edit = state.edits.find(edit => edit.id === action.payload.id);
-            if (edit) {
-                edit.accepted = action.payload.accepted;
-            }
+        reset: (state) => initialState,
+        setAccepted(state, action: PayloadAction<{id: string, accepted: boolean}>) {
+            state.suggestions = state.suggestions.map(suggestion => suggestion.id === action.payload.id ? {...suggestion, accepted: action.payload.accepted} : suggestion);
         },
-        setAllAcceptedStatuses(state, action: PayloadAction<boolean>) {
-            state.edits.forEach(edit => edit.accepted = action.payload);
-        },
-        reset: (state) => initialState
+        setAllAccepted(state, action: PayloadAction<boolean>) {
+            state.suggestions = state.suggestions.map(suggestion => ({...suggestion, accepted: action.payload}));
+        }
     },
     extraReducers: builder => {
         builder.addCase(fetchEdits.pending, (state, action) => {
@@ -57,7 +59,11 @@ export const aiSlice = createSlice({
 
         builder.addCase(fetchEdits.fulfilled, (state, action) => {
             state.loading = false;
-            state.edits = action.payload;
+            state.suggestions = action.payload.map(suggestion => ({
+                id: `${suggestion.startCharacter}-${suggestion.endCharacter}`,
+                accepted: true,
+                 ...suggestion
+            }));
         });
         
         builder.addCase(fetchEdits.rejected, (state) => {
@@ -69,4 +75,4 @@ export const aiSlice = createSlice({
 
 export default aiSlice.reducer;
 export { fetchEdits };
-export const { setStartPoint, setAcceptedStatus, reset, setAllAcceptedStatuses } = aiSlice.actions;
+export const { setStartPoint, reset, setAccepted, setAllAccepted } = aiSlice.actions;
