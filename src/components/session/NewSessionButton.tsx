@@ -26,7 +26,7 @@ export default function NewSessionButton({...props}: ButtonProps) {
     return (
         !loading &&
             <Button size="sm" {...props} onClick={handleNew}>
-                <File className="h-4 w-4 mr-2" />New File
+                <File className="h-4 w-4 mr-2" />New
             </Button>
     )
 }

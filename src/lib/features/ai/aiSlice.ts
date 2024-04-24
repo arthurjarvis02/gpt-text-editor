@@ -42,7 +42,11 @@ export const aiSlice = createSlice({
             if (edit) {
                 edit.accepted = action.payload.accepted;
             }
-        }
+        },
+        setAllAcceptedStatuses(state, action: PayloadAction<boolean>) {
+            state.edits.forEach(edit => edit.accepted = action.payload);
+        },
+        reset: (state) => initialState
     },
     extraReducers: builder => {
         builder.addCase(fetchEdits.pending, (state, action) => {
@@ -65,4 +69,4 @@ export const aiSlice = createSlice({
 
 export default aiSlice.reducer;
 export { fetchEdits };
-export const { setStartPoint, setAcceptedStatus } = aiSlice.actions;
+export const { setStartPoint, setAcceptedStatus, reset, setAllAcceptedStatuses } = aiSlice.actions;

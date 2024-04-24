@@ -1,5 +1,4 @@
-import { Edit } from "@/lib/api/editText";
-import { EditorConfig, LexicalEditor, NodeKey, SerializedTextNode, TextNode } from "lexical";
+import { EditorConfig, LexicalEditor, NodeKey, SerializedTextNode, TextFormatType, TextNode } from "lexical";
 
 export default class TextChoiceNode extends TextNode {
 
@@ -10,7 +9,7 @@ export default class TextChoiceNode extends TextNode {
     addition: boolean;
     removal: boolean;
 
-    constructor(text: string, originalText: string, newText: string, accepted: boolean, editId: string, key?: NodeKey) {
+    constructor(text: string, originalText: string, newText: string, accepted: boolean, editId: string, format: TextFormatType | number, key?: NodeKey) {
 
         super(text, key);
         this.editId = editId;
@@ -20,6 +19,10 @@ export default class TextChoiceNode extends TextNode {
 
         this.addition = originalText === "";
         this.removal = newText === "";
+
+        super.setFormat(format);
+
+        console.log("Text choice node", this.originalText, this.newText)
     }
 
     static getType(): string {
@@ -29,7 +32,7 @@ export default class TextChoiceNode extends TextNode {
 
     static clone(node: TextChoiceNode): TextChoiceNode {
      
-        return new TextChoiceNode(node.__text, node.originalText, node.newText, node.accepted, node.editId, node.__key);
+        return new TextChoiceNode(node.__text, node.originalText, node.newText, node.accepted, node.editId, node.__format, node.__key);
     }
 
     createDOM(config: EditorConfig, editor?: LexicalEditor): HTMLElement {
@@ -37,6 +40,9 @@ export default class TextChoiceNode extends TextNode {
         const container = document.createElement("span");
         container.classList.add("cursor-pointer", "rounded", "py-0.5", "-my-0.5");
         this.accepted ? container.classList.add("bg-green-100") : container.classList.add("bg-red-100");
+        super.hasFormat("bold") && container.classList.add("font-bold");
+        super.hasFormat("italic") && container.classList.add("italic");
+        super.hasFormat("underline") && container.classList.add("underline");
 
         console.log(this.addition, this.removal, this.originalText, this.newText);
 
@@ -62,5 +68,23 @@ export default class TextChoiceNode extends TextNode {
         }
 
         return container;
+    }
+
+    canInsertTextBefore(): boolean {
+            
+        return false;
+    }
+
+    canInsertTextAfter(): boolean {
+            
+        return false;
+    }
+
+    exportJSON(): SerializedTextNode {
+                
+            return {
+                ...super.exportJSON(),
+                type: TextChoiceNode.getType()
+            };
     }
 }

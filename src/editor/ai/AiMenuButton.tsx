@@ -27,9 +27,11 @@ export default function AiMenuButton({children, ...props}: ButtonProps) {
             if (!$isRangeSelection(selection)) return;
 
             const originalText = selection.getTextContent();
-            const startPoint = selection.getStartEndPoints()![selection.isBackward() ? 1 : 0];
+            const points = selection.getStartEndPoints()
 
-            if (!startPoint) return;
+            if (!points) return;
+
+            const startPoint = points[selection.isBackward() ? 1 : 0];
 
             dispatch(fetchEdits({prompt, originalText, startPoint: {key: startPoint.key, offset: startPoint.offset, type: startPoint.type}}));
         });
@@ -38,7 +40,7 @@ export default function AiMenuButton({children, ...props}: ButtonProps) {
     return (
         <Popover onOpenChange={setIsOpen} open={isOpen}>
             <PopoverTrigger asChild>
-                <Button size="iconSm" {...props}>
+                <Button {...props}>
                     <Sparkles className="w-4 h-4" />
                 </Button>
             </PopoverTrigger>

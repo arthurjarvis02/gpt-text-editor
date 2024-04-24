@@ -3,7 +3,7 @@
 import { SerializedPointType, setAcceptedStatus, setStartPoint } from "@/lib/features/ai/aiSlice";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { $createPoint, $createRangeSelection, $createTextNode, $getNodeByKey, $getRoot, $getSelection, $isElementNode, $isRangeSelection, $isTextNode, $parseSerializedNode, $selectAll, $setSelection, ElementNode, LexicalNode, PointType, RangeSelection, RootNode, TextNode } from "lexical";
+import { $createNodeSelection, $createParagraphNode, $createPoint, $createRangeSelection, $createTextNode, $getNodeByKey, $getRoot, $getSelection, $isElementNode, $isRangeSelection, $isTextNode, $parseSerializedNode, $selectAll, $setSelection, ElementNode, LexicalNode, PointType, RangeSelection, RootNode, TextNode } from "lexical";
 import { useEffect } from "react";
 import TextChoiceNode from "./TextChoiceNode";
 import { NodeEventPlugin } from "@lexical/react/LexicalNodeEventPlugin";
@@ -18,17 +18,61 @@ export default function TextChoicePlugin() {
 
     useEffect(() => {
 
-        if (loading || !edits || edits.length == 0 || !startPoint) return;
-
-        console.log("Updating text choice nodes");
-
         console.log("Edits:", JSON.stringify(edits, null, 2));
-
-        let updatedStartPoint = startPoint;
         
         editor.update(() => {
 
-            for (const edit of edits) {
+            const renderedEditIds: string[] = [];
+
+            for (const node of $getRoot().getAllTextNodes()) {
+
+                if (node instanceof TextChoiceNode) {
+
+                    const stateEdit = edits.find(edit => edit.id === node.editId);
+
+                    if (!stateEdit) {
+
+                        const newNode = $createTextNode(node.__text);
+                        newNode.setFormat(node.__format);
+
+                        const parent = node.getParentOrThrow();
+
+                        const selection = $createRangeSelection();
+                        selection.anchor = $createPoint(node.__key, 0, "text");
+                        selection.focus = $createPoint(node.__key, node.getTextContentSize(), "text");
+
+                        console.log(selection.extract());
+        
+                        selection.removeText();
+
+                        console.log("Removed edit", node.editId, "from the editor")
+
+                        continue;
+                    }
+
+                    renderedEditIds.push(node.editId);
+
+                    console.log("Found edit", node.originalText, node.newText, "in the editor")
+
+                    if (stateEdit.accepted !== node.accepted) {
+
+                        console.log("Updating edit", node.editId, "to", stateEdit.accepted)
+
+                        const newNode = new TextChoiceNode(node.__text, node.originalText, node.newText, stateEdit.accepted, node.editId, node.__format);
+                        node.replace(newNode);
+                    }
+                }
+            }
+
+            if (renderedEditIds.length > 0 || !startPoint) return;
+
+            console.log("Rendering new")
+
+            const unrenderedEdits = edits.filter(edit => !renderedEditIds.includes(edit.id));
+
+            let updatedStartPoint = startPoint;
+
+            for (const edit of unrenderedEdits) {
 
                 console.log("Looking for edit", edit.originalText, edit.newText);
 
@@ -36,6 +80,7 @@ export default function TextChoicePlugin() {
                 const nodes = selection.extract();
 
                 const nodeTree = constructTextNodeTree(nodes);
+                console.log("Node tree", JSON.stringify(nodeTree, null, 2));
 
                 const startOffset = updatedStartPoint.offset;
 
@@ -49,18 +94,35 @@ export default function TextChoicePlugin() {
                 const splice = $createRangeSelection();
                 splice.anchor = start;
                 splice.focus = end;
+                const spliceExtracted = splice.extract();
+
+                console.log("Text in splice:", splice.getTextContent());
+
+                const format = spliceExtracted.length == 1 && spliceExtracted[0] instanceof TextNode ? spliceExtracted[0].__format : 0;
 
                 const newNode = new TextChoiceNode(
                     splice.getTextContent(),
                     edit.originalText,
                     edit.newText,
                     edit.accepted,
-                    edit.id
+                    edit.id,
+                    format,
                 );
 
-                splice.insertNodes([newNode]);
+                const startNode = $getNodeByKey(start.key);
 
-                if (start == updatedStartPoint && start.type == "text") { // We need to update the startPoint
+                if (start.key == updatedStartPoint.key && $isTextNode(startNode) && startNode.getTextContentSize() == edit.endCharacter - edit.startCharacter) {
+
+                    startNode.replace(newNode);
+                    
+                } else {
+
+                    splice.insertNodes([newNode]);
+                }
+
+                console.log("Start:", start, "startPoint of selection:", updatedStartPoint);
+
+                if (start.key == updatedStartPoint.key && start.offset == updatedStartPoint.offset && start.type == updatedStartPoint.type && start.type == "text") { // We need to update the startPoint
 
                     console.log("Inserting new start point")
                     updatedStartPoint = {key: newNode.__key, offset: 0, type: "text"};
@@ -69,7 +131,7 @@ export default function TextChoicePlugin() {
             }
         });
 
-    }, [loading]);
+    }, [edits]);
 
     const handleClick = (nodeKey: string) => {
 
@@ -80,8 +142,8 @@ export default function TextChoicePlugin() {
 
                 console.log(node.editId, "click detected");
 
-                const newNode = new TextChoiceNode(node.__text, node.originalText, node.newText, !node.accepted, node.editId);
-                node.replace(newNode);
+                //const newNode = new TextChoiceNode(node.__text, node.originalText, node.newText, !node.accepted, node.editId);
+                //node.replace(newNode);
 
                 dispatch(setAcceptedStatus({id: node.editId, accepted: !node.accepted}));
             }
@@ -152,6 +214,7 @@ function findPointByCharacterIndex(nodes: TextNodeTree, index: number): PointTyp
 
                 if (charIndex <= index && charIndex + length >= index) {
                     point = $createPoint(text.__key, index - charIndex, "text")
+                    break;
                 }
 
                 charIndex += length;
