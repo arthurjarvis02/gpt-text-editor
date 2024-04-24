@@ -36,7 +36,17 @@ export default class SuggestionNode extends ElementNode {
 
     updateDOM(_prevNode: SuggestionNode, _dom: HTMLElement, _config: EditorConfig): boolean {
      
-        return false;
+        console.log("Updating dom")
+
+        if (_prevNode.accepted !== this.accepted) {
+
+            _dom.classList.remove(_prevNode.accepted ? "bg-green-100" : "bg-red-100");
+            _dom.classList.add(this.accepted ? "bg-green-100" : "bg-red-100");
+
+            return false;
+        }
+
+        return true;
     }
 
     exportJSON() {

@@ -3,7 +3,7 @@
 import { SerializedPointType, setAccepted, setStartPoint } from "@/lib/features/ai/aiSlice";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { $createNodeSelection, $createParagraphNode, $createPoint, $createRangeSelection, $createTextNode, $getNodeByKey, $getRoot, $getSelection, $isElementNode, $isRangeSelection, $isTextNode, $parseSerializedNode, $selectAll, $setSelection, ElementNode, LexicalNode, PointType, RangeSelection, RootNode, TextNode } from "lexical";
+import { $createNodeSelection, $createParagraphNode, $createPoint, $createRangeSelection, $createTextNode, $getNodeByKey, $getRoot, $getSelection, $isElementNode, $isRangeSelection, $isTextNode, $parseSerializedNode, $selectAll, $setSelection, ElementNode, LexicalNode, ParagraphNode, PointType, RangeSelection, RootNode, TextNode } from "lexical";
 import { useEffect } from "react";
 import TextChoiceNode from "./TextChoiceNode";
 import { NodeEventPlugin } from "@lexical/react/LexicalNodeEventPlugin";
@@ -20,15 +20,18 @@ export default function TextChoicePlugin() {
 
         editor.update(() => {
 
-            if (!startPoint) return;
+            console.log(JSON.stringify(suggestions, null, 2))
 
-            console.log(suggestions);
+            if (!startPoint) return;
+            
+            let updatedStartPoint = startPoint;
+            let offset = 0;
 
             for (const suggestion of suggestions) {
 
                 console.log("Looking for edit", suggestion.newText);
 
-                const selection = $getSelectionToEnd(startPoint);
+                const selection = $getSelectionToEnd(updatedStartPoint);
                 const nodes = selection.extract();
 
                 console.log(nodes);
@@ -36,8 +39,8 @@ export default function TextChoicePlugin() {
                 const nodeTree = constructTextNodeTree(nodes);
                 console.log("Node tree", JSON.stringify(nodeTree, null, 2));
 
-                const start = findPointByCharacterIndex(nodeTree, suggestion.startCharacter);
-                const end = findPointByCharacterIndex(nodeTree, suggestion.endCharacter);
+                const start = findPointByCharacterIndex(nodeTree, suggestion.startCharacter - offset);
+                const end = findPointByCharacterIndex(nodeTree, suggestion.endCharacter - offset);
 
                 console.log("Start point", start, "End point", end);
 
@@ -48,23 +51,24 @@ export default function TextChoicePlugin() {
                 splice.focus = end;
 
                 const spliceExtracted = splice.extract();
+                console.log("Within two points:", spliceExtracted)
 
                 let suggestionNode: SuggestionNode | null = null;
                 let prevParent: ElementNode | null = null;
 
-                spliceExtracted.forEach((node) => {
+                for (const node of spliceExtracted) {
 
                     const parent = node.getParent();
               
                     if (parent === suggestionNode || parent === null || ($isElementNode(node) && !node.isInline())) return;
               
                     if (parent instanceof SuggestionNode) {
+
+                        console.log("found node", suggestion.id, parent.suggestionId)
                         suggestionNode = parent;
                         parent.setAccepted(suggestion.accepted);
-                        return;
-                    }
-              
-                    if (!parent.is(prevParent)) {
+                        console.log("case 1")
+                    } else if (!parent.is(prevParent)) {
                         
                         prevParent = parent;
                         suggestionNode = $createSuggestionNode(suggestion);
@@ -74,10 +78,12 @@ export default function TextChoicePlugin() {
                             if (node.getPreviousSibling() === null) {
 
                                 parent.insertBefore(suggestionNode);
+                                console.log("case 2")
     
                             } else {
 
                                 parent.insertAfter(suggestionNode);
+                                console.log("case 3")
                             }
 
                         } else {
@@ -88,7 +94,7 @@ export default function TextChoicePlugin() {
               
                     if (node instanceof SuggestionNode) {
 
-                        if (node.is(suggestionNode)) return;
+                        if (node.is(suggestionNode)) continue;
 
                         if (suggestionNode !== null) {
 
@@ -101,14 +107,21 @@ export default function TextChoicePlugin() {
                         }
                 
                         node.remove();
-                        return;
-                    }
-              
-                    if (suggestionNode !== null) {
+
+                    } else if (suggestionNode !== null) {
 
                         suggestionNode.append(node);
                     }
-                });
+                }
+
+                if (!suggestionNode) return;
+
+                console.log("updating start point")
+
+                updatedStartPoint = $createPoint(suggestionNode.getParentOrThrow().getKey(), suggestionNode.getIndexWithinParent() + 1, "element");
+                offset = suggestion.endCharacter;
+
+                console.log(splice.extract());
             }
         })
 
@@ -212,24 +225,29 @@ type TextNodeTree = {
 
 function constructTextNodeTree(nodes: LexicalNode[]): TextNodeTree {
 
-    const paragraphNodes = orderNodes(nodes.filter(node => node instanceof ElementNode) as ElementNode[]);
+    const paragraphNodes = orderNodes(nodes.filter(node => node instanceof ParagraphNode) as ParagraphNode[]);
 
     const nodesTree: TextNodeTree = [];
 
     if (paragraphNodes.length > 0) {
 
         paragraphNodes.forEach(paragraphNode => {
+
+            const selection = $createRangeSelection();
+
             nodesTree.push({
                 paragraphKey: paragraphNode.__key,
-                textNodes: findChildrenByParentKey(nodes, paragraphNode.__key)
+                textNodes: orderNodes(paragraphNode.getAllTextNodes())
             });
         });
 
     } else {
 
+        console.log("only 1")
+
         nodesTree.push({
             paragraphKey: nodes[0].__parent!,
-            textNodes: orderNodes(nodes as TextNode[]),
+            textNodes: orderNodes(nodes).filter(node => node instanceof TextNode) as TextNode[],
         });
     }
 

@@ -1,5 +1,6 @@
 import { Suggestion, editText } from "@/lib/api/editText";
 import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { TextFormatType } from "lexical";
 
 const fetchEdits = createAsyncThunk(
     "ai/fetchEditsStatus",
@@ -12,6 +13,7 @@ const fetchEdits = createAsyncThunk(
 export type ClientSuggestion = Suggestion & {
     id: string;
     accepted: boolean;
+    originalText: string;
 }
 
 export type SerializedPointType = {
@@ -59,9 +61,12 @@ export const aiSlice = createSlice({
 
         builder.addCase(fetchEdits.fulfilled, (state, action) => {
             state.loading = false;
+            const fullText = action.meta.arg.originalText;
+
             state.suggestions = action.payload.map(suggestion => ({
                 id: `${suggestion.startCharacter}-${suggestion.endCharacter}`,
                 accepted: true,
+                originalText: fullText.slice(suggestion.startCharacter, suggestion.endCharacter),
                  ...suggestion
             }));
         });
