@@ -14,6 +14,9 @@ dependencies:
   '@lexical/html':
     specifier: ^0.14.5
     version: 0.14.5
+  '@lexical/link':
+    specifier: ^0.14.5
+    version: 0.14.5
   '@lexical/markdown':
     specifier: ^0.14.5
     version: 0.14.5

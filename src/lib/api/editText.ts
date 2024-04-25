@@ -85,7 +85,7 @@ function combineGroups(groups: Change[][]): Suggestion[] {
 
     for (const group of groups) {
 
-        const startCharacter = currentCharacter;
+        let startCharacter = currentCharacter;
         let originalText = "";
         let newText = "";
         
@@ -112,6 +112,20 @@ function combineGroups(groups: Change[][]): Suggestion[] {
         const id = `${startCharacter}-${endCharacter}`;
         const accepted = true;
 
+        // if (newText.includes("\n")) continue;
+
+        // while (originalText.startsWith("\n")) {
+        //     originalText = originalText.slice(1);
+        //     startCharacter++;
+        // }
+
+        // while (originalText.endsWith("\n")) {
+        //     originalText = originalText.slice(0, -1);
+        //     endCharacter--;
+        // }
+
+        // if (originalText.includes("\n") || originalText == newText) continue;
+
         (group.length > 1 || group[0].added || group[0].removed) && edits.push({startCharacter, endCharacter, newText});
     }
 
@@ -121,6 +135,10 @@ function combineGroups(groups: Change[][]): Suggestion[] {
 export async function editText(prompt: string, original_text: string): Promise<Suggestion[]> {
 
     const edited_text = await chain.invoke({prompt, original_text});
+    console.log(edited_text);
+
+    const res = combineGroups(groupChanges(diffWordsWithSpace(original_text, edited_text)));
+    console.log(JSON.stringify(res, null, 2));
     
-    return combineGroups(groupChanges(diffWordsWithSpace(original_text, edited_text)));
+    return res
 }

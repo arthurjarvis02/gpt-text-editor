@@ -33,7 +33,8 @@ export default function Editor({session, ...props}: {session: Session} & Props) 
             text: {
                 bold: "font-bold",
                 italic: "italic",
-                underline: "underline"
+                underline: "underline",
+                strikethrough: "line-through"
             }
         },
         nodes: [

@@ -14,6 +14,8 @@ export type ClientSuggestion = Suggestion & {
     id: string;
     accepted: boolean;
     originalText: string;
+    addition: boolean;
+    removal: boolean;
 }
 
 export type SerializedPointType = {
@@ -63,12 +65,17 @@ export const aiSlice = createSlice({
             state.loading = false;
             const fullText = action.meta.arg.originalText;
 
-            state.suggestions = action.payload.map(suggestion => ({
-                id: `${suggestion.startCharacter}-${suggestion.endCharacter}`,
-                accepted: true,
-                originalText: fullText.slice(suggestion.startCharacter, suggestion.endCharacter),
-                 ...suggestion
-            }));
+            state.suggestions = action.payload.map(suggestion => {
+                const originalText = fullText.slice(suggestion.startCharacter, suggestion.endCharacter);
+                return {
+                    id: `${suggestion.startCharacter}-${suggestion.endCharacter}`,
+                    accepted: true,
+                    originalText,
+                    addition: originalText === "",
+                    removal: suggestion.newText === "",
+                    ...suggestion
+                }
+            });
         });
         
         builder.addCase(fetchEdits.rejected, (state) => {

@@ -9,6 +9,7 @@ import { ArrowLeft, Check, CheckCheck, LoaderCircle, Save, Sparkles, X } from "l
 import { useCallback } from "react";
 import TextChoiceNode from "./TextChoiceNode";
 import { $createTextNode, $getRoot } from "lexical";
+import { $saveChanges } from "./TextChoicePlugin";
 
 export default function AiToolbar() {
 
@@ -24,29 +25,13 @@ export default function AiToolbar() {
         </div>
     );
 
-    const handleSave = () => {
-
-        editor.update(() => {
-
-            // for (const node of $getRoot().getAllTextNodes()) {
-
-            //     if (node instanceof TextChoiceNode) {
-
-            //         const suggestions = suggestions.find(suggestion => suggestion.id === node.editId);
-            //         if (!edit) continue;
-
-            //         node.replace($createTextNode(suggestion.accepted ? node.newText : node.originalText));
-            //     }
-            // }
-        });
-
-        dispatch(reset());
-
-    };
-
     return (
         <div className="flex gap-1 items-center">
-            <Button variant="ghost" size="sm" onClick={() => dispatch(reset())}>
+            <Button variant="ghost" size="sm" onClick={() => {
+                    dispatch(setAllAccepted(false));
+                    editor.update(() => $saveChanges(suggestions));
+                    dispatch(reset());
+                }}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
             </Button>
@@ -66,7 +51,10 @@ export default function AiToolbar() {
                 Accept all
             </Button>
             <div className="w-1" />
-            <Button variant="default" size="sm" onClick={handleSave}>
+            <Button variant="default" size="sm" onClick={() => {
+                    editor.update(() => $saveChanges(suggestions));
+                    dispatch(reset());
+                }}>
                 <Save className="w-4 h-4 mr-2" />
                 Save
             </Button>
