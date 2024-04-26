@@ -9,7 +9,7 @@ export default class SpacerTextNode extends TextNode {
             stroke-width="3" 
             stroke-linecap="round" 
             stroke-linejoin="round" 
-            class="lucide lucide-corner-down-left inline w-3 h-3 stroke-gray-600">
+            class="lucide lucide-corner-down-left inline w-3 h-3 stroke-gray-500">
                 <polyline points="9 14 4 19 9 24"/>
                 <path d="M20 0v15a4 4 0 0 1-4 4H4"/>
             </svg>`,
@@ -23,7 +23,7 @@ export default class SpacerTextNode extends TextNode {
             stroke-width="3" 
             stroke-linecap="round" 
             stroke-linejoin="round" 
-            class="lucide lucide-corner-down-left inline w-3 h-3 stroke-gray-600">
+            class="lucide lucide-corner-down-left inline w-3 h-3 stroke-gray-500">
                 <polyline points="9 14 4 19 9 24"/>
                 <path d="M20 0v15a4 4 0 0 1-4 4H4"/>
                 <path d="M0 11.2 H24"/>

@@ -32,7 +32,7 @@ export default class SuggestionNode extends ElementNode {
         container.classList.add("cursor-pointer", "rounded", "py-0.5", "-my-0.5");
         container.classList.add(this.accepted ? "bg-green-100" : "bg-red-100");
         this.strikethrough && container.classList.add("line-through");
-        this.strikethrough && container.classList.add("text-gray-600");
+        this.strikethrough && container.classList.add("text-gray-500");
 
         return container;
     }
@@ -51,7 +51,7 @@ export default class SuggestionNode extends ElementNode {
 
         if (_prevNode.strikethrough !== this.strikethrough) {
             
-            _dom.classList.toggle("text-gray-700");
+            _dom.classList.toggle("text-gray-500");
             _dom.classList.toggle("line-through");
 
             return false;

@@ -26,7 +26,7 @@ export default function SuggestionDisplayPlugin() {
 
         console.log(startPoint, endPoint);
 
-        if (startPoint === undefined || endPoint === undefined) return;
+        if (startPoint === undefined || endPoint === undefined || !inAiMode) return;
 
         // Initial render
 
@@ -141,16 +141,21 @@ export default function SuggestionDisplayPlugin() {
 
                     const [nodes, firstSuggestionKey, totalFakeLength] = $createSuggestionNodes(suggestion);
 
-                    const startNode = $getNodeByKey(start.key)!;
-                    const endNode = $getNodeByKey(end.key)!;
+                    let updateStart = false;
                     
-                    const startParent = startNode.getParentOrThrow();
-                    const endParent = endNode.getParentOrThrow();
+                    if (start.is(updatedStartPoint)) {
 
-                    const startOfStartNode = $createPoint(startParent.getKey(), startNode.getIndexWithinParent(), "element");
-                    const endOfEndNode = $createPoint(endParent.getKey(), endNode.getIndexWithinParent() + 1, "element");
+                        console.log("Updating start point")
+                        updateStart = true;
 
-                    console.log("Start of start node", startOfStartNode, "End of end node", endOfEndNode);
+                        const startNode = $getNodeByKey(start.key)!;
+
+                        const parent = startNode.getParentOrThrow();
+                        
+                        updatedStartPoint = $createPoint(parent.getKey(), startNode.getIndexWithinParent(), "element");
+
+                        console.log("Updated start point", updatedStartPoint);
+                    }
 
                     splice.removeText();
 
@@ -160,6 +165,9 @@ export default function SuggestionDisplayPlugin() {
 
                     const extracted1 = selection1.extract();
                     const tree1 = $constructParagraphTextTree(extracted1);
+
+                    console.log(JSON.stringify(tree, null, 2))
+                    console.log(JSON.stringify(tree1, null, 2));
 
                     const insertPoint = $findPointByCharacterIndex(tree1, suggestion.startCharacter + charOffset);
 
@@ -173,7 +181,7 @@ export default function SuggestionDisplayPlugin() {
 
                     insert.insertNodes(nodes);
 
-                    if (start.is(updatedStartPoint)) {
+                    if (updateStart) {
 
                         console.log("Updating start point")
 

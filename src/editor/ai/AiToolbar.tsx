@@ -28,14 +28,18 @@ export default function AiToolbar() {
 
     return (
         <div className="flex gap-1 items-center">
-            <Button variant="ghost" size="sm" onClick={() => {
+            {/* <Button variant="ghost" size="sm" onClick={() => {
                 dispatch(setAllAccepted(false));
                 editor.update(() => $saveAcceptedSuggestions());
                 dispatch(reset());
             }}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
-            </Button>
+            </Button> */}
+
+            <Sparkles className="w-4 h-4" />
+
+            <span>{suggestions.length} suggestions</span>
 
             <div className="w-1" />
 
