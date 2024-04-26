@@ -9,6 +9,7 @@ import { Sparkles } from "lucide-react";
 import { useAppDispatch } from "@/lib/hooks";
 import { fetchEdits } from "@/lib/features/ai/aiSlice";
 import { useState } from "react";
+import { SerializedPointType, serializePoint } from "@/lib/types";
 
 export default function AiMenuButton({children, ...props}: ButtonProps) {
 
@@ -31,22 +32,10 @@ export default function AiMenuButton({children, ...props}: ButtonProps) {
             const points = selection.getStartEndPoints()
             if (!points) return;
 
-            let startPoint = points[selection.isBackward() ? 1 : 0];
+            const startPoint = serializePoint(points[selection.isBackward() ? 1 : 0]);
+            const endPoint = serializePoint(points[selection.isBackward() ? 0 : 1]);
 
-            const startNode = $getNodeByKey(startPoint.key);
-            if (!startNode) return;
-
-            if ($isTextNode(startNode)) {
-
-                const parentNode = startNode.getParent();
-                if (!parentNode) return;
-
-                startPoint = $createPoint(parentNode.getKey(), startNode.getIndexWithinParent(), "element");
-            }
-
-            console.log(startPoint);
-
-            dispatch(fetchEdits({prompt, originalText, startPoint: {key: startPoint.key, offset: startPoint.offset, type: startPoint.type}}));
+            dispatch(fetchEdits({prompt, originalText, startPoint, endPoint}));
         });
     }
     

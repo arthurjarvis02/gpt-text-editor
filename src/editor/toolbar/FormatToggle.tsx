@@ -30,7 +30,6 @@ export default function FormatToggle({format, ...props}: {format: TextFormatType
             });
         });
 
-
     }, [editor, $checkIfFormatActive]);
 
     return (

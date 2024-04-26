@@ -1,18 +1,19 @@
-import { Suggestion } from "@/lib/api/editText";
-import { ClientSuggestion } from "@/lib/features/ai/aiSlice";
+import { ClientSuggestion } from "@/lib/types";
 import { EditorConfig, ElementNode, LexicalEditor, LexicalNode, NodeKey, SerializedElementNode, SerializedLexicalNode } from "lexical";
 
 export default class SuggestionNode extends ElementNode {
 
     suggestionId: string;
     accepted: boolean;
+    strikethrough: boolean;
 
-    constructor(suggestionId: string, accepted: boolean, key?: NodeKey) {
+    constructor(suggestionId: string, accepted: boolean, strikethrough: boolean, key?: NodeKey) {
 
         super(key);
 
         this.suggestionId = suggestionId;
         this.accepted = accepted;
+        this.strikethrough = strikethrough;
     }
 
     static getType(): string {
@@ -22,7 +23,7 @@ export default class SuggestionNode extends ElementNode {
 
     static clone(node: SuggestionNode): SuggestionNode {
 
-        return new SuggestionNode(node.suggestionId, node.accepted, node.__key);
+        return new SuggestionNode(node.suggestionId, node.accepted, node.strikethrough, node.__key);
     }
     
     createDOM(_config: EditorConfig, _editor: LexicalEditor): HTMLElement {
@@ -30,6 +31,8 @@ export default class SuggestionNode extends ElementNode {
         const container = document.createElement("span");
         container.classList.add("cursor-pointer", "rounded", "py-0.5", "-my-0.5");
         container.classList.add(this.accepted ? "bg-green-100" : "bg-red-100");
+        this.strikethrough && container.classList.add("line-through");
+        this.strikethrough && container.classList.add("text-gray-600");
 
         return container;
     }
@@ -46,6 +49,14 @@ export default class SuggestionNode extends ElementNode {
             return false;
         }
 
+        if (_prevNode.strikethrough !== this.strikethrough) {
+            
+            _dom.classList.toggle("text-gray-700");
+            _dom.classList.toggle("line-through");
+
+            return false;
+        }
+
         return true;
     }
 
@@ -53,14 +64,27 @@ export default class SuggestionNode extends ElementNode {
         
         return {
             ...super.exportJSON(),
-            accepted: this.accepted
+            accepted: this.accepted,
+            type: SuggestionNode.getType()
         };
     }
 
     setAccepted(accepted: boolean): void {
         const writable = this.getWritable();
         writable.accepted = accepted;
-      }
+    }
+
+    isInline(): boolean {
+        return true;
+    }
+    
+    canInsertTextAfter(): boolean {
+        return false;
+    }
+
+    canInsertTextBefore(): boolean {
+        return false;
+    }
 }
 
 export function $isSuggestionNode(node: LexicalNode | null | undefined): node is SuggestionNode {
@@ -68,7 +92,9 @@ export function $isSuggestionNode(node: LexicalNode | null | undefined): node is
     return node instanceof SuggestionNode;
 }
 
-export function $createSuggestionNode(suggestion: ClientSuggestion): SuggestionNode {
+export function $createSuggestionNode(suggestionId: string, accepted: boolean, strikethrough?: boolean): SuggestionNode {
 
-    return new SuggestionNode(suggestion.id, suggestion.accepted);
+    const strike = strikethrough === undefined ? false : strikethrough;
+
+    return new SuggestionNode(suggestionId, accepted, strike);
 }

@@ -14,6 +14,8 @@ import TextChoicePlugin from './ai/TextChoicePlugin';
 import { NodeEventPlugin } from "@lexical/react/LexicalNodeEventPlugin";
 import TextChoiceNode from './ai/TextChoiceNode';
 import SuggestionNode from './ai/SuggestionNode';
+import SuggestionDisplayPlugin from './ai/SuggestionDisplayPlugin';
+import SpacerTextNode from './ai/SpacerTextNode';
 
 export default function Editor({session, ...props}: {session: Session} & Props) {
 
@@ -38,35 +40,36 @@ export default function Editor({session, ...props}: {session: Session} & Props) 
             }
         },
         nodes: [
-            SuggestionNode
+            SuggestionNode,
+            SpacerTextNode
         ]
     }
 
     return (
-            <LexicalComposer initialConfig={initialConfig}>
-                <RichTextPlugin 
-                    contentEditable={
-                        <ContentEditable
-                            {...props}
-                        />
+        <LexicalComposer initialConfig={initialConfig}>
+            <RichTextPlugin 
+                contentEditable={
+                    <ContentEditable
+                        {...props}
+                    />
+                }
+                placeholder={<></>}
+                ErrorBoundary={LexicalErrorBoundary}
+            />
+            <OnChangePlugin 
+                onChange={
+                    editorState => {
+                        !inAiMode &&
+                        dispatch(updateSession({
+                            id: session.id,
+                            editorState: editorState.toJSON()
+                        }))
                     }
-                    placeholder={<></>}
-                    ErrorBoundary={LexicalErrorBoundary}
-                />
-                <OnChangePlugin 
-                    onChange={
-                        editorState => {
-                            !inAiMode &&
-                            dispatch(updateSession({
-                                id: session.id,
-                                editorState: editorState.toJSON()
-                            }))
-                        }
-                    }
-                />
-                <ToolbarPlugin />
-                <LockEditorPlugin locked={inAiMode} />
-                <TextChoicePlugin />
-            </LexicalComposer>
+                }
+            />
+            <ToolbarPlugin />
+            <LockEditorPlugin locked={inAiMode} />
+            <SuggestionDisplayPlugin />
+        </LexicalComposer>
     );
 }

@@ -1,41 +1,32 @@
-import { Suggestion, editText } from "@/lib/api/editText";
+import { editText } from "@/lib/api/editText";
+import { ClientSuggestion, SerializedParagraphTextTree, SerializedPointType } from "@/lib/types";
 import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { TextFormatType } from "lexical";
+import { $createPoint, PointType, TextFormatType } from "lexical";
 
 const fetchEdits = createAsyncThunk(
     "ai/fetchEditsStatus",
-    async ({prompt, originalText, startPoint}: {prompt: string, originalText: string, startPoint: SerializedPointType}, thunkAPI) => {
+    async ({prompt, originalText, startPoint, endPoint}: {prompt: string, originalText: string, startPoint: SerializedPointType, endPoint: SerializedPointType}, thunkAPI) => {
+        
+        console.log("Fetching edits", prompt, originalText, startPoint, endPoint);
         const response  = editText(prompt, originalText);
         return response;
     }
 )
 
-export type ClientSuggestion = Suggestion & {
-    id: string;
-    accepted: boolean;
-    originalText: string;
-    addition: boolean;
-    removal: boolean;
-}
-
-export type SerializedPointType = {
-    key: string;
-    offset: number;
-    type: "text" | "element";
-}
-
 interface AiState {
     inAiMode: boolean;
     loading: boolean;
     suggestions: ClientSuggestion[];
-    startPoint: SerializedPointType | null;
+    startPoint?: SerializedPointType;
+    endPoint?: SerializedPointType;
+    rendered: boolean;
 }
 
 const initialState: AiState = {
     inAiMode: false,
     loading: false,
     suggestions: [],
-    startPoint: null
+    rendered: false
 }
 
 export const aiSlice = createSlice({
@@ -52,6 +43,12 @@ export const aiSlice = createSlice({
         },
         setAllAccepted(state, action: PayloadAction<boolean>) {
             state.suggestions = state.suggestions.map(suggestion => ({...suggestion, accepted: action.payload}));
+        },
+        setOriginalContents(state, action: PayloadAction<{id: string, originalContents: SerializedParagraphTextTree}>) {
+            state.suggestions = state.suggestions.map(suggestion => suggestion.id === action.payload.id ? {...suggestion, originalContents: action.payload.originalContents} : suggestion);
+        },
+        onceRendered(state) {
+            state.rendered = true;
         }
     },
     extraReducers: builder => {
@@ -59,23 +56,21 @@ export const aiSlice = createSlice({
             state.inAiMode = true;
             state.loading = true;
             state.startPoint = action.meta.arg.startPoint;
+            state.endPoint = action.meta.arg.endPoint;
         });
 
         builder.addCase(fetchEdits.fulfilled, (state, action) => {
-            state.loading = false;
-            const fullText = action.meta.arg.originalText;
 
-            state.suggestions = action.payload.map(suggestion => {
-                const originalText = fullText.slice(suggestion.startCharacter, suggestion.endCharacter);
-                return {
-                    id: `${suggestion.startCharacter}-${suggestion.endCharacter}`,
-                    accepted: true,
-                    originalText,
-                    addition: originalText === "",
-                    removal: suggestion.newText === "",
-                    ...suggestion
-                }
-            });
+            console.log("Fetched edits", JSON.stringify(action.payload, null, 2))
+
+            state.loading = false;
+
+            state.suggestions = action.payload.map(suggestion => ({
+                id: `${suggestion.startCharacter}-${suggestion.endCharacter}`,
+                accepted: true,
+                ...suggestion
+            }));
+            
         });
         
         builder.addCase(fetchEdits.rejected, (state) => {
@@ -87,4 +82,4 @@ export const aiSlice = createSlice({
 
 export default aiSlice.reducer;
 export { fetchEdits };
-export const { setStartPoint, reset, setAccepted, setAllAccepted } = aiSlice.actions;
+export const { setStartPoint, reset, setAccepted, setAllAccepted, setOriginalContents, onceRendered } = aiSlice.actions;

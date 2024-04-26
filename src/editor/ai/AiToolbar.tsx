@@ -10,6 +10,7 @@ import { useCallback } from "react";
 import TextChoiceNode from "./TextChoiceNode";
 import { $createTextNode, $getRoot } from "lexical";
 import { $saveChanges } from "./TextChoicePlugin";
+import { $saveAcceptedSuggestions } from "./SuggestionDisplayPlugin";
 
 export default function AiToolbar() {
 
@@ -28,10 +29,10 @@ export default function AiToolbar() {
     return (
         <div className="flex gap-1 items-center">
             <Button variant="ghost" size="sm" onClick={() => {
-                    dispatch(setAllAccepted(false));
-                    editor.update(() => $saveChanges(suggestions));
-                    dispatch(reset());
-                }}>
+                dispatch(setAllAccepted(false));
+                editor.update(() => $saveAcceptedSuggestions());
+                dispatch(reset());
+            }}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
             </Button>
@@ -52,9 +53,9 @@ export default function AiToolbar() {
             </Button>
             <div className="w-1" />
             <Button variant="default" size="sm" onClick={() => {
-                    editor.update(() => $saveChanges(suggestions));
-                    dispatch(reset());
-                }}>
+                editor.update(() => $saveAcceptedSuggestions());
+                dispatch(reset());
+            }}>
                 <Save className="w-4 h-4 mr-2" />
                 Save
             </Button>

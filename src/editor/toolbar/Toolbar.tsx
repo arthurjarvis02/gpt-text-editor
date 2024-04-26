@@ -1,8 +1,8 @@
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Bold, Italic, Sparkles, Underline } from "lucide-react";
 import FormatToggle from "./FormatToggle";
 import AiMenuButton from "../ai/AiMenuButton";
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 
 export default function Toolbar() {
 
