@@ -20,6 +20,8 @@ interface AiState {
     startPoint?: SerializedPointType;
     rendered: boolean;
     currentSessionId?: string;
+    error: boolean;
+    errorMessage?: string | null;
 }
 
 const initialState: AiState = {
@@ -27,6 +29,7 @@ const initialState: AiState = {
     loading: false,
     suggestions: [],
     rendered: false,
+    error: false
 }
 
 export const aiSlice = createSlice({
@@ -63,11 +66,20 @@ export const aiSlice = createSlice({
 
         builder.addCase(fetchEdits.fulfilled, (state, action) => {
 
-            console.log("Fetched edits", JSON.stringify(action.payload, null, 2))
-
             state.loading = false;
 
-            state.suggestions = action.payload.map(suggestion => ({
+            console.log("Fetched edits", JSON.stringify(action.payload, null, 2));
+
+            const res = action.payload;
+
+            if (res.error || !res.suggestions) {
+
+                state.error = true;
+                state.errorMessage = res.errorMessage;
+                return;
+            }
+
+            state.suggestions = res.suggestions.map(suggestion => ({
                 id: `${suggestion.startCharacter}-${suggestion.endCharacter}`,
                 accepted: true,
                 ...suggestion

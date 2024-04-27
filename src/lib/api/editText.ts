@@ -3,17 +3,23 @@
 import { OpenAI } from "@langchain/openai";
 import { RunnableSequence } from "@langchain/core/runnables";
 import { PromptTemplate } from "@langchain/core/prompts";
-import { StringOutputParser } from "@langchain/core/output_parsers";
+import { OutputParserException, StringOutputParser, StructuredOutputParser } from "@langchain/core/output_parsers";
 import { Change, diffWords, diffWordsWithSpace } from "diff";
 import { Suggestion } from "../types";
 
+const parser = StructuredOutputParser.fromNamesAndDescriptions({
+    editedText: "The text after you have edited it according to the provided prompt",
+    errorMessage: "An error message if it was impossible to edit the text according to the prompt"
+})
+
 const chain = RunnableSequence.from([
     PromptTemplate.fromTemplate(
-        `You are editing some text written by a human.
-        The human has given you the following instruction for editing the text: '{prompt}'.
+        `You are editing some text written by a human user.
+        The human has given you the following prompt for editing the text: '{prompt}'.
         The original text is:
         \`\`\`{original_text}\`\`\`
-        Respond with only the edited text, with no surrounding quotation marks.`
+        If it is possible to edit the text according to the prompt, respond with only the edited text with no surrounding quotation marks.
+        If you do not understand the prompt, respond with the string "ERROR: " (without the quotation marks) followed by an error message to show to the user.`
     ),
     new OpenAI({
         model: "gpt-3.5-turbo",
@@ -49,6 +55,13 @@ function groupChanges(changes: Change[]): Change[][] {
                 if (!prevChange.added && !prevChange.removed && prevChange.value.trim()) {
                 
                     startNewGroup();
+                }
+
+                if (prevChange.added || prevChange.removed) {
+
+                    if (prevChange.value[prevChange.value.length - 1] === "\n") {
+
+                    }
                 }
             }
 
@@ -133,14 +146,24 @@ function combineGroups(groups: Change[][]): Suggestion[] {
     return edits;
 }
 
-export async function editText(prompt: string, original_text: string): Promise<Suggestion[]> {
+export type EditTextResponse = {
+    error: boolean;
+    errorMessage: string | null;
+    suggestions: Suggestion[];
+}
 
-    const edited_text = await chain.invoke({prompt, original_text});
-    console.log(original_text)
-    console.log(edited_text);
+export async function editText(prompt: string, original_text: string): Promise<EditTextResponse> {
 
-    const res = combineGroups(groupChanges(diffWordsWithSpace(original_text, edited_text)));
-    console.log(JSON.stringify(res, null, 2));
-    
-    return res
+    return chain.invoke({prompt, original_text}).then(res => {
+            
+        const error = res.slice(0, 7) === "ERROR: ";
+        const errorMessage = error ? res.slice(7) : null;
+        const suggestions = error ? [] : combineGroups(groupChanges(diffWordsWithSpace(original_text, res)));
+
+        return {
+            error,
+            errorMessage,
+            suggestions
+        }
+    });
 }

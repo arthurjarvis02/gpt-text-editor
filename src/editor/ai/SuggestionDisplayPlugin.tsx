@@ -34,15 +34,29 @@ export default function SuggestionDisplayPlugin() {
             editor.update(() => {
 
                 $selectAll();
-                const allSuggestionNodes = $getSelection()!.getNodes().filter($isSuggestionNode);
+                const allNodes = $getSelection()!.extract();
+
+                if (allNodes.length === 1) {
+
+                    while (allNodes[allNodes.length - 1].getKey() !== $getRoot().getKey()) {
+
+                        allNodes.push(allNodes[allNodes.length - 1].getParentOrThrow());
+                    }
+                }
+                
+                const allSuggestionNodes = allNodes.filter($isSuggestionNode);
 
                 for (const suggestion of suggestions) {
 
+                    console.log("Upating suggestion", suggestion.id, suggestion.accepted);
+
                     const suggestionNodes = allSuggestionNodes.filter(node => node.suggestionId === suggestion.id);
+
+                    console.log(allSuggestionNodes, suggestionNodes);
 
                     if (suggestionNodes.every(node => node.accepted === suggestion.accepted)) continue;
 
-                    console.log("Upating suggestion", suggestion.id, suggestion.accepted);
+                    console.log("Different to state, so changing")
 
                     const first = suggestionNodes[0];
                     const firstParent = first.getParent();
@@ -209,6 +223,8 @@ export default function SuggestionDisplayPlugin() {
             eventType="click" 
             eventListener={(_, editor, nodeKey) => {
 
+                console.log("click detected");
+
                 const node = $getNodeByKey(nodeKey);
                 if (!$isSuggestionNode(node)) return;
 
@@ -229,7 +245,16 @@ export default function SuggestionDisplayPlugin() {
 export function $saveAcceptedSuggestions() {
 
     $selectAll();
-    const allSuggestionNodes = $getSelection()!.getNodes().filter($isSuggestionNode);
+    const allNodes = $getSelection()!.extract();
+
+    if (allNodes.length === 1) {
+
+        while (allNodes[allNodes.length - 1].getKey() !== $getRoot().getKey()) {
+
+            allNodes.push(allNodes[allNodes.length - 1].getParentOrThrow());
+        }
+    }
+    const allSuggestionNodes = allNodes.filter($isSuggestionNode);
 
     for (const suggestionNode of allSuggestionNodes) {
 
