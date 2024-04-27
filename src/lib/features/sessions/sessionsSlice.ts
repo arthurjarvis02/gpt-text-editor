@@ -6,6 +6,7 @@ export type Session = {
     id: string;
     title?: string;
     editorState?: SerializedEditorState;
+    prevCustomEdits?: string[];
 }
 
 interface SessionsState {

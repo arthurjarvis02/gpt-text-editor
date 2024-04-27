@@ -13,7 +13,7 @@ const chain = RunnableSequence.from([
         The human has given you the following instruction for editing the text: '{prompt}'.
         The original text is:
         \`\`\`{original_text}\`\`\`
-        Respond with only the edited text.`
+        Respond with only the edited text, with no surrounding quotation marks.`
     ),
     new OpenAI({
         model: "gpt-3.5-turbo",
@@ -49,13 +49,6 @@ function groupChanges(changes: Change[]): Change[][] {
                 if (!prevChange.added && !prevChange.removed && prevChange.value.trim()) {
                 
                     startNewGroup();
-                }
-
-                if (prevChange.added || prevChange.removed) {
-
-                    if (prevChange.value[prevChange.value.length - 1] === "\n") {
-
-                    }
                 }
             }
 

@@ -5,9 +5,9 @@ import { $createPoint, PointType, TextFormatType } from "lexical";
 
 const fetchEdits = createAsyncThunk(
     "ai/fetchEditsStatus",
-    async ({prompt, originalText, startPoint, endPoint}: {prompt: string, originalText: string, startPoint: SerializedPointType, endPoint: SerializedPointType}, thunkAPI) => {
+    async ({prompt, originalText, startPoint}: {prompt: string, originalText: string, startPoint: SerializedPointType}, thunkAPI) => {
         
-        console.log("Fetching edits", prompt, originalText, startPoint, endPoint);
+        console.log("Fetching edits", prompt, originalText, startPoint);
         const response  = editText(prompt, originalText);
         return response;
     }
@@ -18,15 +18,15 @@ interface AiState {
     loading: boolean;
     suggestions: ClientSuggestion[];
     startPoint?: SerializedPointType;
-    endPoint?: SerializedPointType;
     rendered: boolean;
+    currentSessionId?: string;
 }
 
 const initialState: AiState = {
     inAiMode: false,
     loading: false,
     suggestions: [],
-    rendered: false
+    rendered: false,
 }
 
 export const aiSlice = createSlice({
@@ -49,6 +49,9 @@ export const aiSlice = createSlice({
         },
         onceRendered(state) {
             state.rendered = true;
+        },
+        setCurrentSessionId(state, action: PayloadAction<string>) {
+            state.currentSessionId = action.payload;
         }
     },
     extraReducers: builder => {
@@ -56,7 +59,6 @@ export const aiSlice = createSlice({
             state.inAiMode = true;
             state.loading = true;
             state.startPoint = action.meta.arg.startPoint;
-            state.endPoint = action.meta.arg.endPoint;
         });
 
         builder.addCase(fetchEdits.fulfilled, (state, action) => {
@@ -82,4 +84,4 @@ export const aiSlice = createSlice({
 
 export default aiSlice.reducer;
 export { fetchEdits };
-export const { setStartPoint, reset, setAccepted, setAllAccepted, setOriginalContents, onceRendered } = aiSlice.actions;
+export const { setStartPoint, reset, setAccepted, setAllAccepted, setOriginalContents, onceRendered, setCurrentSessionId } = aiSlice.actions;

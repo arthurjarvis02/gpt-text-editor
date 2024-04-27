@@ -39,7 +39,7 @@ export default function AiToolbar() {
 
             <Sparkles className="w-4 h-4" />
 
-            <span>{suggestions.length} suggestions</span>
+            <span>{suggestions.length} suggestion{suggestions.length === 1 || "s"}</span>
 
             <div className="w-1" />
 

@@ -17,16 +17,13 @@ export default function SuggestionDisplayPlugin() {
     const [editor] = useLexicalComposerContext();
     const suggestions = useAppSelector(state => state.ai.suggestions);
     const startPoint = useAppSelector(state => state.ai.startPoint);
-    const endPoint = useAppSelector(state => state.ai.endPoint);
     const rendered = useAppSelector(state => state.ai.rendered);
     const inAiMode = useAppSelector(state => state.ai.inAiMode);
     const dispatch = useAppDispatch();
 
     useEffect(() => {
 
-        console.log(startPoint, endPoint);
-
-        if (startPoint === undefined || endPoint === undefined || !inAiMode) return;
+        if (startPoint === undefined || !inAiMode) return;
 
         // Initial render
 
@@ -129,9 +126,9 @@ export default function SuggestionDisplayPlugin() {
                     let start = $findPointByCharacterIndex(tree, suggestion.startCharacter + charOffset);
                     let end = $findPointByCharacterIndex(tree, suggestion.endCharacter + charOffset);
 
-                    if (!start || !end) return;
-
                     console.log("Start:", start, "End:", end)
+
+                    if (!start || !end) return;
 
                     const splice = $createRangeSelection();
                     splice.anchor = start;
