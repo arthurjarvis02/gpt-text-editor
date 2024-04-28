@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs))
 }
 
-export function $findPointByCharacterIndex(tree: ParagraphTextTree, index: number) {
+export function $findPointByCharacterIndex(tree: ParagraphTextTree, index: number, skipToNext?: boolean) {
 
     let charIndex = 0;
 
@@ -34,12 +34,21 @@ export function $findPointByCharacterIndex(tree: ParagraphTextTree, index: numbe
 
                 const length = text.getTextContentSize();
 
-                if (charIndex <= index && charIndex + length >= index) {
+                if (charIndex + length == index && (!skipToNext || n == paraChildren.length - 1)) {
+
+                    console.log("At end, found it")
+                    point = $createPoint(text.__key, length, "text");
+                    return point;
+
+                }
+
+                if (charIndex <= index && charIndex + length > index) {
                     point = $createPoint(text.__key, index - charIndex, "text")
                     return point;
                 }
 
                 charIndex += length;
+
             }
         }
 

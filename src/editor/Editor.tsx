@@ -10,12 +10,11 @@ import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin';
 import { updateSession } from '@/lib/features/sessions/sessionsSlice';
 import ToolbarPlugin from './toolbar/ToolbarPlugin';
 import LockEditorPlugin from './LockEditorPlugin';
-import TextChoicePlugin from './ai/TextChoicePlugin';
-import { NodeEventPlugin } from "@lexical/react/LexicalNodeEventPlugin";
-import TextChoiceNode from './ai/TextChoiceNode';
 import SuggestionNode from './ai/SuggestionNode';
 import SuggestionDisplayPlugin from './ai/SuggestionDisplayPlugin';
 import SpacerTextNode from './ai/SpacerTextNode';
+import ErrorDisplay from './ai/ErrorDisplay';
+import HistoryWithoutSuggestionsPlugin from './ai/HistoryWithoutSuggestionsPlugin';
 
 export default function Editor({session, ...props}: {session: Session} & Props) {
 
@@ -46,30 +45,34 @@ export default function Editor({session, ...props}: {session: Session} & Props) 
     }
 
     return (
-        <LexicalComposer initialConfig={initialConfig}>
-            <RichTextPlugin 
-                contentEditable={
-                    <ContentEditable
-                        {...props}
-                    />
-                }
-                placeholder={<></>}
-                ErrorBoundary={LexicalErrorBoundary}
-            />
-            <OnChangePlugin 
-                onChange={
-                    editorState => {
-                        !inAiMode &&
-                        dispatch(updateSession({
-                            id: session.id,
-                            editorState: editorState.toJSON()
-                        }))
+        <>
+            <LexicalComposer initialConfig={initialConfig}>
+                <RichTextPlugin 
+                    contentEditable={
+                        <ContentEditable
+                            {...props}
+                        />
                     }
-                }
-            />
-            <ToolbarPlugin />
-            <LockEditorPlugin locked={inAiMode} />
-            <SuggestionDisplayPlugin />
-        </LexicalComposer>
+                    placeholder={<></>}
+                    ErrorBoundary={LexicalErrorBoundary}
+                />
+                <OnChangePlugin 
+                    onChange={
+                        editorState => {
+                            !inAiMode &&
+                            dispatch(updateSession({
+                                id: session.id,
+                                editorState: editorState.toJSON()
+                            }))
+                        }
+                    }
+                />
+                <ToolbarPlugin />
+                <LockEditorPlugin locked={inAiMode} />
+                <SuggestionDisplayPlugin />
+                <HistoryWithoutSuggestionsPlugin />
+            </LexicalComposer>
+            <ErrorDisplay />
+        </>
     );
 }

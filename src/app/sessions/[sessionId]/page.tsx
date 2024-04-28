@@ -20,7 +20,7 @@ export default function Session({params: {sessionId}}: {params: {sessionId: stri
                     <div id="editor-toolbar" />
                 }
             />
-            <div className="p-4 pointer-events-none">
+            <div className="p-4">
                 <EditorSurface sessionId={sessionId} />
             </div>
         </>

@@ -47,14 +47,17 @@ export const aiSlice = createSlice({
         setAllAccepted(state, action: PayloadAction<boolean>) {
             state.suggestions = state.suggestions.map(suggestion => ({...suggestion, accepted: action.payload}));
         },
-        setOriginalContents(state, action: PayloadAction<{id: string, originalContents: SerializedParagraphTextTree}>) {
-            state.suggestions = state.suggestions.map(suggestion => suggestion.id === action.payload.id ? {...suggestion, originalContents: action.payload.originalContents} : suggestion);
+        setFormats(state, action: PayloadAction<{id: string, formats: TextFormatType[]}>) {
+            state.suggestions = state.suggestions.map(suggestion => suggestion.id === action.payload.id ? {...suggestion, formats: action.payload.formats} : suggestion);
         },
         onceRendered(state) {
             state.rendered = true;
         },
         setCurrentSessionId(state, action: PayloadAction<string>) {
             state.currentSessionId = action.payload;
+        },
+        setOriginalContent(state, action: PayloadAction<{id: string, originalContent: SerializedParagraphTextTree}>) {
+            state.suggestions = state.suggestions.map(suggestion => suggestion.id === action.payload.id ? {...suggestion, originalContent: action.payload.originalContent} : suggestion);
         }
     },
     extraReducers: builder => {
@@ -76,6 +79,7 @@ export const aiSlice = createSlice({
 
                 state.error = true;
                 state.errorMessage = res.errorMessage;
+
                 return;
             }
 
@@ -96,4 +100,4 @@ export const aiSlice = createSlice({
 
 export default aiSlice.reducer;
 export { fetchEdits };
-export const { setStartPoint, reset, setAccepted, setAllAccepted, setOriginalContents, onceRendered, setCurrentSessionId } = aiSlice.actions;
+export const { setStartPoint, reset, setAccepted, setAllAccepted, setFormats, onceRendered, setCurrentSessionId, setOriginalContent } = aiSlice.actions;

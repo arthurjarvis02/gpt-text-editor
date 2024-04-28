@@ -1,16 +1,17 @@
 "use client";
 
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
-import { $deserializePoint, exportParagraphTextTree, ClientSuggestion } from "@/lib/types";
+import { $deserializePoint, exportParagraphTextTree, ClientSuggestion, SerializedParagraphTextTree, ParagraphTextTree } from "@/lib/types";
 import { $constructParagraphTextTree, $findPointByCharacterIndex, $getEndPoint } from "@/lib/utils";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { $createParagraphNode, $createPoint, $createRangeSelection, $createTextNode, $getNodeByKey, $getRoot, $getSelection, $isParagraphNode, $selectAll, LexicalNode, NodeKey, ParagraphNode, RangeSelection } from "lexical";
+import { $createParagraphNode, $createPoint, $createRangeSelection, $createTextNode, $getNodeByKey, $getRoot, $getSelection, $isParagraphNode, $isTextNode, $selectAll, $setSelection, LexicalNode, NodeKey, ParagraphNode, RangeSelection, TextFormatType, TextNode } from "lexical";
 import { useEffect } from "react";
 import SuggestionNode, { $createSuggestionNode, $isSuggestionNode } from "./SuggestionNode";
-import { onceRendered, setAccepted, setOriginalContents } from "@/lib/features/ai/aiSlice";
+import { onceRendered, setAccepted, setFormats, setOriginalContent } from "@/lib/features/ai/aiSlice";
 import { deserialize } from "v8";
 import { NodeEventPlugin } from "@lexical/react/LexicalNodeEventPlugin";
 import { $createSpacerTextNode, $isSpacerTextNode } from "./SpacerTextNode";
+import { Dialog } from "@/components/ui/dialog";
 
 export default function SuggestionDisplayPlugin() {
 
@@ -137,7 +138,7 @@ export default function SuggestionDisplayPlugin() {
                     const extracted = selection.extract();
                     const tree = $constructParagraphTextTree(extracted);
 
-                    let start = $findPointByCharacterIndex(tree, suggestion.startCharacter + charOffset);
+                    let start = $findPointByCharacterIndex(tree, suggestion.startCharacter + charOffset, true);
                     let end = $findPointByCharacterIndex(tree, suggestion.endCharacter + charOffset);
 
                     console.log("Start:", start, "End:", end)
@@ -148,9 +149,24 @@ export default function SuggestionDisplayPlugin() {
                     splice.anchor = start;
                     splice.focus = end;
 
-                    console.log("Original text:", splice.getTextContent())
+                    console.log("Original text:", splice.getTextContent());
 
-                    const [nodes, firstSuggestionKey, totalFakeLength] = $createSuggestionNodes(suggestion);
+                    const originalContent = $extractSelection(splice);
+                    dispatch(setOriginalContent({id: suggestion.id, originalContent}));
+                    console.log("Original content:", originalContent);
+
+                    const formats: TextFormatType[] = [];
+
+                    for (const format of ["bold", "italic", "underline"] as TextFormatType[]) {
+
+                        splice.getNodes().filter($isTextNode).every(node => node.hasFormat(format)) && formats.push(format);
+                    }
+
+                    console.log(splice.getNodes(), formats);
+
+                    dispatch(setFormats({id: suggestion.id, formats}));
+
+                    const [nodes, firstSuggestionKey, totalFakeLength] = $createSuggestionNodes({...suggestion, originalContent, formats});
 
                     let updateStart = false;
                     
@@ -176,9 +192,6 @@ export default function SuggestionDisplayPlugin() {
 
                     const extracted1 = selection1.extract();
                     const tree1 = $constructParagraphTextTree(extracted1);
-
-                    console.log(JSON.stringify(tree, null, 2))
-                    console.log(JSON.stringify(tree1, null, 2));
 
                     const insertPoint = $findPointByCharacterIndex(tree1, suggestion.startCharacter + charOffset);
 
@@ -210,6 +223,11 @@ export default function SuggestionDisplayPlugin() {
 
                     charOffset += suggestion.newText.length - suggestion.endCharacter + suggestion.startCharacter + totalFakeLength;
                 }
+
+                const selectNone = $createRangeSelection();
+                selectNone.anchor = updatedStartPoint;
+                selectNone.focus = updatedStartPoint;
+                $setSelection(selectNone);
             });
         }
 
@@ -218,28 +236,81 @@ export default function SuggestionDisplayPlugin() {
     }, [suggestions]);
 
     return (
-        <NodeEventPlugin
-            nodeType={SuggestionNode} 
-            eventType="click" 
-            eventListener={(_, editor, nodeKey) => {
+        <>
+            <NodeEventPlugin
+                nodeType={SuggestionNode} 
+                eventType="click" 
+                eventListener={(_, editor, nodeKey) => {
 
-                console.log("click detected");
+                    console.log("click detected");
 
-                const node = $getNodeByKey(nodeKey);
-                if (!$isSuggestionNode(node)) return;
+                    const node = $getNodeByKey(nodeKey);
+                    if (!$isSuggestionNode(node)) return;
 
-                const id = node.suggestionId;
-                const suggestion = suggestions.find(s => s.id === id);
+                    const id = node.suggestionId;
+                    const suggestion = suggestions.find(s => s.id === id);
 
-                if (!suggestion) return;
-                
-                dispatch(setAccepted({
-                    id,
-                    accepted: !suggestion.accepted
-                }));
-            }} 
-        />
+                    if (!suggestion) return;
+                    
+                    dispatch(setAccepted({
+                        id,
+                        accepted: !suggestion.accepted
+                    }));
+                }} 
+            />
+        </>
     );
+}
+
+function $extractSelection(selection: RangeSelection): SerializedParagraphTextTree {
+
+    const startEndPoints = selection.getStartEndPoints();
+
+    if (!startEndPoints) throw new Error("No start end points");
+
+    const startPoint = startEndPoints[selection.isBackward() ? 1 : 0];
+    const endPoint = startEndPoints[selection.isBackward() ? 0 : 1];
+
+    const allNodes = selection.getNodes();
+    const allTree = exportParagraphTextTree($constructParagraphTextTree(allNodes));
+
+    const startNode = $getNodeByKey(startPoint.key);
+
+    if (!startNode) throw new Error("Start node not found");
+
+    if (startPoint.type == "text" && startPoint.offset !== 0 && $isTextNode(startNode)) {
+
+        console.log("Start point is text not at beginning of text node");
+
+        allTree[0][0] = {
+            ...startNode.exportJSON(),
+            text: allTree[0][0].text.slice(startPoint.offset)
+        }
+    }
+
+    const endNode = $getNodeByKey(endPoint.key);
+
+    if (!endNode) throw new Error("End node not found");
+
+    if (endPoint.type == "text" && $isTextNode(endNode)) {
+
+        console.log("End point is text");
+
+        if (endPoint.offset !== endNode.getTextContentSize()) {
+
+            console.log("End point is not at end of text node");
+
+            let endIndex = endPoint.offset;
+            if (startNode.getKey() === endNode.getKey()) endIndex -= startPoint.offset;
+
+            allTree[allTree.length - 1][allTree[allTree.length - 1].length - 1] = {
+                ...endNode.exportJSON(),
+                text: allTree[allTree.length - 1][allTree[allTree.length - 1].length - 1].text.slice(0, endIndex)
+            }
+        }
+    }
+
+    return allTree;
 }
 
 export function $saveAcceptedSuggestions() {
@@ -260,6 +331,8 @@ export function $saveAcceptedSuggestions() {
 
         const parent = suggestionNode.getParent();
         if (!parent) return;
+
+        console.log("Accepting/rejecting", suggestionNode.accepted, suggestionNode.suggestionId);
 
         const splice = $createRangeSelection();
         const splicePoint = $createPoint(parent.getKey(), suggestionNode.getIndexWithinParent(), "element");
@@ -283,8 +356,53 @@ function $createSuggestionNodes(suggestion: ClientSuggestion, appendToLastParagr
 
     const addition = suggestion.originalText.length === 0;
     const removal = suggestion.newText.length === 0;
+    
+    const setFormats = suggestion.formats || [];
+
+    console.log("Set formats", setFormats);
 
     if (suggestion.accepted && removal) {
+
+        if (suggestion.originalContent !== undefined) {
+
+            console.log("Has original contente saved")
+
+            const node = $createParagraphNode();
+            const suggestionNode = $createSuggestionNode(suggestion.id, suggestion.accepted, true);
+
+            for (let i = 0; i < suggestion.originalContent.length; i++) {
+
+                const para = suggestion.originalContent[i];
+
+                console.log(para);
+
+                for (let jsonTextNode of para) {
+                        
+                    const textNode = TextNode.importJSON(jsonTextNode);
+                    suggestionNode.append(textNode);
+                    totalFakeLength += textNode.getTextContentSize();
+                }
+
+                if (i < suggestion.originalContent.length - 1) {
+                    const textNode = $createSpacerTextNode(true, 1);
+                    suggestionNode.append(textNode);
+                    totalFakeLength += textNode.getTextContentSize();
+                    console.log("adding return symbol")
+                }
+
+                node.append(suggestionNode);
+            }
+
+
+            if (!(appendToLastParagraph === undefined)) node.append(...appendToLastParagraph);
+
+            if (!firstSuggestionKey) firstSuggestionKey = suggestionNode.getKey();
+
+            nodes.push(node);
+
+            if (!firstSuggestionKey) throw new Error("No suggestion key found");
+            return [nodes, firstSuggestionKey, totalFakeLength];
+        }
         
         const text = suggestion.originalText;
         const lines = text.split("\n");
@@ -299,9 +417,16 @@ function $createSuggestionNodes(suggestion: ClientSuggestion, appendToLastParagr
             const line = lines[i];
             let textNode: LexicalNode;
 
-            line.length === 0 ? textNode = $createSpacerTextNode(true, 1) : textNode = $createTextNode(line);
+            if (line.length === 0) {
+
+                textNode = $createSpacerTextNode(true, 1);
+            } else {
+
+                textNode = $createTextNode(line);
+
+                setFormats.forEach(format => (textNode as TextNode).toggleFormat(format));
+            }
         
-            suggestionNode.append(textNode);
             totalFakeLength += textNode.getTextContentSize();
 
             console.log(suggestion, totalFakeLength)
@@ -323,7 +448,7 @@ function $createSuggestionNodes(suggestion: ClientSuggestion, appendToLastParagr
         nodes.push(node);
 
     } else if (!suggestion.accepted && addition) {
-        
+
         const text = suggestion.newText;
         const lines = text.split("\n");
 
@@ -335,12 +460,18 @@ function $createSuggestionNodes(suggestion: ClientSuggestion, appendToLastParagr
         for (let i = 0; i < lines.length - 1; i++) {
 
             const line = lines[i];
-            let textNode: LexicalNode;
+            let textNode: LexicalNode;textNode = $createTextNode(line);
 
-            line.length === 0 ? textNode = $createSpacerTextNode(true, 1) : textNode = $createTextNode(line);
+            setFormats.forEach(format => (textNode as TextNode).toggleFormat(format));
         
             suggestionNode.append(textNode);
-            totalFakeLength += textNode.getTextContentSize();
+
+            const spacerNode = $createSpacerTextNode(true, 1)
+
+            suggestionNode.append(spacerNode);
+            totalFakeLength += textNode.getTextContentSize() + spacerNode.getTextContentSize();
+
+            console.log(suggestionNode);
         }
 
         const lastLine = lines[lines.length - 1];
@@ -359,6 +490,39 @@ function $createSuggestionNodes(suggestion: ClientSuggestion, appendToLastParagr
         nodes.push(node);
 
     } else {
+
+        if (!suggestion.accepted && suggestion.originalContent !== undefined) {
+
+            console.log("Has original contente saved")
+
+            for (let i = 0; i < suggestion.originalContent.length; i++) {
+
+                const node = $createParagraphNode();
+                const suggestionNode = $createSuggestionNode(suggestion.id, suggestion.accepted);
+
+                suggestionNode.append(...suggestion.originalContent[i].map(jsonTextNode => TextNode.importJSON(jsonTextNode)));
+            
+                if (i < suggestion.originalContent.length - 1) {
+                    suggestionNode.append($createSpacerTextNode(false, 1));
+                    totalFakeLength++;
+                } else {
+                    if (appendToLastParagraph) {
+                        suggestionNode.append(...appendToLastParagraph);
+                    }
+
+                    if (suggestion.originalContent[i].length === 0) suggestionNode.append($createSpacerTextNode(false, 1, false));
+                }
+                node.append(suggestionNode);
+
+                if (!firstSuggestionKey) firstSuggestionKey = suggestionNode.getKey();
+
+                nodes.push(node);
+            }
+
+            if (!firstSuggestionKey) throw new Error("No suggestion key found");
+            console.log(nodes);
+            return [nodes, firstSuggestionKey, totalFakeLength];
+        }
         
         console.log(suggestion, "doesnt need striketrhoguh")
 
@@ -374,7 +538,10 @@ function $createSuggestionNodes(suggestion: ClientSuggestion, appendToLastParagr
             const node = $createParagraphNode();
             const suggestionNode = $createSuggestionNode(suggestion.id, suggestion.accepted);
 
-            suggestionNode.append($createTextNode(line));
+            const textNode = $createTextNode(line);
+            setFormats.forEach(format => textNode.toggleFormat(format));
+
+            suggestionNode.append(textNode);
             
             if (i < lines.length - 1) {
                 suggestionNode.append($createSpacerTextNode(false, 1));
@@ -391,8 +558,6 @@ function $createSuggestionNodes(suggestion: ClientSuggestion, appendToLastParagr
             if (!firstSuggestionKey) firstSuggestionKey = suggestionNode.getKey();
 
             nodes.push(node);
-
-            console.log(node, suggestionNode, suggestionNode.getChildren()[0]);
         }
     }
 

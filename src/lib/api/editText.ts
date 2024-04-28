@@ -6,6 +6,7 @@ import { PromptTemplate } from "@langchain/core/prompts";
 import { OutputParserException, StringOutputParser, StructuredOutputParser } from "@langchain/core/output_parsers";
 import { Change, diffWords, diffWordsWithSpace } from "diff";
 import { Suggestion } from "../types";
+import { current } from "@reduxjs/toolkit";
 
 const parser = StructuredOutputParser.fromNamesAndDescriptions({
     editedText: "The text after you have edited it according to the provided prompt",
@@ -48,20 +49,17 @@ function groupChanges(changes: Change[]): Change[][] {
         if (change.added || change.removed) {
 
             if (currentGroup.length > 0) {
-
-                const prevChange = currentGroup[currentGroup.length - 1];
-
-                // If previous text was not a change and contained text other than spaces, start a new group
-                if (!prevChange.added && !prevChange.removed && prevChange.value.trim()) {
                 
+                const prevChange = currentGroup[currentGroup.length - 1];
+                console.log("Checking prev change", prevChange.added, prevChange.removed, prevChange.value.trim().length)
+
+                if (!prevChange.added && !prevChange.removed && prevChange.value.replaceAll(" ", "").length !== 0) {
+                
+                    startNewGroup(); // Only include constant whitespace between changes, not any more
+
+                } else if (currentGroup.length == 1 && !prevChange.added && !prevChange.removed) {
+
                     startNewGroup();
-                }
-
-                if (prevChange.added || prevChange.removed) {
-
-                    if (prevChange.value[prevChange.value.length - 1] === "\n") {
-
-                    }
                 }
             }
 
@@ -69,19 +67,41 @@ function groupChanges(changes: Change[]): Change[][] {
 
             if (currentGroup.length > 0) {
 
-                if (!change.value.trim() && i + 1 < changes.length) {
+                const prevChange = currentGroup[currentGroup.length - 1];
+                const punctuation = [".", "!", "?"]
 
-                    const nextChange = changes[i + 1];
 
-                    // If current value is a space and next value is not a change, start a new group
-                    if (!nextChange.added && !nextChange.removed) {
 
-                        startNewGroup();
+                if (!change.value.trim()) { // If current value is a space after a change and possibly before a change
+
+                    if (currentGroup.length > 1) {
+
+                        const prevPrevChange = currentGroup[currentGroup.length - 2];
+
+                        if (prevPrevChange.removed && prevChange.added && punctuation.includes(prevChange.value[prevChange.value.length - 1]) && punctuation.includes(prevPrevChange.value[prevPrevChange.value.length - 1])) {
+
+                            startNewGroup();
+                            console.log("sentence break")
+
+                        }
+                    }
+
+                    if (i + 1 < changes.length) {
+
+                        const nextChange = changes[i + 1];
+
+                        // If current value is a space and next value is not a change, start a new group
+                        if (!nextChange.added && !nextChange.removed) {
+
+                            startNewGroup();
+                        }
                     }
 
                 } else {
 
                     startNewGroup();
+
+                    console.log("else")
                 }
             }
         }
@@ -120,7 +140,7 @@ function combineGroups(groups: Change[][]): Suggestion[] {
 
         let endCharacter = currentCharacter;
 
-        if (originalText[originalText.length - 1] === " " && newText[newText.length - 1] === " ") {
+        while (originalText.length > 0 && newText.length > 0 && !originalText[originalText.length - 1].trim() && !newText[newText.length - 1].trim() && originalText[originalText.length - 1] == newText[newText.length - 1]) {
             endCharacter--;
             originalText = originalText.slice(0, -1);
             newText = newText.slice(0, -1);
@@ -159,6 +179,8 @@ export async function editText(prompt: string, original_text: string): Promise<E
         const error = res.slice(0, 7) === "ERROR: ";
         const errorMessage = error ? res.slice(7) : null;
         const suggestions = error ? [] : combineGroups(groupChanges(diffWordsWithSpace(original_text, res)));
+
+        console.log(original_text, res);
 
         return {
             error,

@@ -14,6 +14,9 @@ dependencies:
   '@langchain/openai':
     specifier: ^0.0.28
     version: 0.0.28
+  '@lexical/history':
+    specifier: ^0.14.5
+    version: 0.14.5
   '@lexical/html':
     specifier: ^0.14.5
     version: 0.14.5

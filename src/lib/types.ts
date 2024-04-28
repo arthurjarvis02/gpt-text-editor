@@ -1,4 +1,4 @@
-import { $createParagraphNode, $createPoint, NodeKey, PointType, SerializedTextNode, TextNode } from "lexical";
+import { $createParagraphNode, $createPoint, NodeKey, PointType, SerializedTextNode, TextFormatType, TextNode } from "lexical";
 import { $constructParagraphTextTree } from "./utils";
 
 export type Suggestion = {
@@ -11,7 +11,8 @@ export type Suggestion = {
 export type ClientSuggestion = Suggestion & {
     id: string;
     accepted: boolean;
-    originalContents?: SerializedParagraphTextTree
+    formats?: TextFormatType[];
+    originalContent?: SerializedParagraphTextTree;
 }
 
 export type SerializedPointType = {

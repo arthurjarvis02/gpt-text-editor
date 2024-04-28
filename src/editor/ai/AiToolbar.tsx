@@ -7,9 +7,7 @@ import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { ArrowLeft, Check, CheckCheck, LoaderCircle, Save, Sparkles, X } from "lucide-react";
 import { useCallback } from "react";
-import TextChoiceNode from "./TextChoiceNode";
 import { $createTextNode, $getRoot } from "lexical";
-import { $saveChanges } from "./TextChoicePlugin";
 import { $saveAcceptedSuggestions } from "./SuggestionDisplayPlugin";
 
 export default function AiToolbar() {
@@ -47,11 +45,11 @@ export default function AiToolbar() {
 
             <div className="w-1" />
 
-            <Button variant="ghost" size="sm" onClick={() => dispatch(setAllAccepted(false))}>
+            <Button className="text-red-600 hover:bg-red-100" variant="ghost" size="sm" onClick={() => dispatch(setAllAccepted(false))}>
                 <X className="w-4 h-4 mr-2" />
                 Reject all
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => dispatch(setAllAccepted(true))}>
+            <Button className="text-green-600 hover:bg-green-100" variant="ghost" size="sm" onClick={() => dispatch(setAllAccepted(true))}>
                 <Check className="w-4 h-4 mr-2" />
                 Accept all
             </Button>

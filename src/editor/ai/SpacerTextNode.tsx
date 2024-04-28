@@ -33,11 +33,13 @@ export default class SpacerTextNode extends TextNode {
 
     strikethrough: boolean;
     fakeLength: number;
+    symbol: boolean;
 
-    constructor(striketrhough: boolean, fakeLength: number, key?: string) {
+    constructor(striketrhough: boolean, fakeLength: number, symbol?: boolean, key?: string) {
         super(" ", key);
         this.strikethrough = striketrhough;
         this.fakeLength = fakeLength;
+        this.symbol = symbol === undefined ? true : symbol;
     }
 
     static getType(): string {
@@ -47,7 +49,7 @@ export default class SpacerTextNode extends TextNode {
 
     static clone(node: SpacerTextNode): SpacerTextNode {
      
-        return new SpacerTextNode(node.strikethrough, node.fakeLength, node.__key);
+        return new SpacerTextNode(node.strikethrough, node.fakeLength, node.symbol, node.__key);
     }
 
     createDOM(config: EditorConfig, editor?: LexicalEditor | undefined): HTMLElement {
@@ -55,7 +57,7 @@ export default class SpacerTextNode extends TextNode {
         const elem = super.createDOM(config, editor);
         const icon = this.strikethrough ? SpacerTextNode.STRIKETHROUGH_ICON : SpacerTextNode.ICON;
 
-        elem.replaceChildren(icon.firstElementChild!.cloneNode(true));
+        this.symbol && elem.replaceChildren(icon.firstElementChild!.cloneNode(true));
 
         return elem;
     }
@@ -87,10 +89,10 @@ export function $isSpacerTextNode(node: LexicalNode): node is SpacerTextNode {
     return node.getType() === SpacerTextNode.getType();
 }
 
-export function $createSpacerTextNode(strikethrough?: boolean, fakeLength?: number): SpacerTextNode {
+export function $createSpacerTextNode(strikethrough?: boolean, fakeLength?: number, symbol?: boolean): SpacerTextNode {
     
     const strike = strikethrough === undefined ? false : strikethrough;
     const length = fakeLength === undefined ? 1 : fakeLength;
 
-    return new SpacerTextNode(strike, length);
+    return new SpacerTextNode(strike, length, symbol);
 }
