@@ -1,5 +1,5 @@
 import { type ClassValue, clsx } from "clsx"
-import { $createParagraphNode, $createPoint, $createRangeSelection, $getNodeByKey, $getRoot, $isElementNode, $isParagraphNode, $isTextNode, LexicalNode, ParagraphNode, PointType, RangeSelection, TextNode } from "lexical"
+import { $createParagraphNode, $createPoint, $createRangeSelection, $createTextNode, $getNodeByKey, $getRoot, $isElementNode, $isParagraphNode, $isTextNode, LexicalNode, ParagraphNode, PointType, RangeSelection, TextNode } from "lexical"
 import { twMerge } from "tailwind-merge"
 import { ParagraphTextTree, SerializedParagraphTextTree } from "./types"
 import { $isSuggestionNode } from "@/editor/ai/SuggestionNode"
@@ -24,6 +24,9 @@ export function $findPointByCharacterIndex(tree: ParagraphTextTree, index: numbe
             if (charIndex == index) {
                 
                 point = $createPoint(para.key, 0, "element");
+                console.log("Found at start of empty element node", para.key);
+
+                ($getNodeByKey(para.key) as ParagraphNode).append($createTextNode(" "));
             }
 
         } else {
@@ -36,7 +39,7 @@ export function $findPointByCharacterIndex(tree: ParagraphTextTree, index: numbe
 
                 if (charIndex + length == index && (!skipToNext || n == paraChildren.length - 1)) {
 
-                    console.log("At end, found it")
+                    console.log("Found at end of node", text.__key, "of", length, "characters");
                     point = $createPoint(text.__key, length, "text");
                     return point;
 
@@ -44,6 +47,7 @@ export function $findPointByCharacterIndex(tree: ParagraphTextTree, index: numbe
 
                 if (charIndex <= index && charIndex + length > index) {
                     point = $createPoint(text.__key, index - charIndex, "text")
+                    console.log("Found in node", text.__key, "at index", index - charIndex, "of", length, "characters")
                     return point;
                 }
 

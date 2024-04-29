@@ -13,7 +13,7 @@ export default function HistoryWithoutSuggestionsPlugin() {
     const [historyState, setHistoryState] = useState(() => createEmptyHistoryState());
     const inAiMode = useAppSelector(state => state.ai.inAiMode);
 
-    console.log(historyState);
+    //console.log(historyState);
 
     useEffect(() => {
 
@@ -23,8 +23,14 @@ export default function HistoryWithoutSuggestionsPlugin() {
 
     useEffect(() => {
 
-        historyState.redoStack = [];
-        historyState.current && historyState.undoStack.push(historyState.current);
+        if (inAiMode) {
+            historyState.redoStack = [];
+            historyState.current && historyState.undoStack.push(historyState.current);
+        } else {
+            if (historyState.undoStack.length > 0) {
+                editor.dispatchCommand(CAN_UNDO_COMMAND, true);
+            }
+        }
         
     }, [inAiMode, editor]);
 

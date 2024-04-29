@@ -13,6 +13,7 @@ export default function CommandButton<T>({enabledCommand, clickCommand, getClick
     useEffect(() => editor.registerCommand(enabledCommand, (enabled) => {
 
         setEnabled(enabled);
+        console.log(enabledCommand, enabled);
         return true;
 
     }, COMMAND_PRIORITY_NORMAL), [editor]);

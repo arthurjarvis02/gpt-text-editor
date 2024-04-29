@@ -19,6 +19,7 @@ const chain = RunnableSequence.from([
         The human has given you the following prompt for editing the text: '{prompt}'.
         The original text is:
         \`\`\`{original_text}\`\`\`
+        The original text is plain text, and you must respond with only plain text (no markdown or other formatting).
         If it is possible to edit the text according to the prompt, respond with only the edited text with no surrounding quotation marks.
         If you do not understand the prompt, respond with the string "ERROR: " (without the quotation marks) followed by an error message to show to the user.`
     ),
