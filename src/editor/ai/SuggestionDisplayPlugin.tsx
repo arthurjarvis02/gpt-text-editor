@@ -368,7 +368,7 @@ function $createSuggestionNodes(suggestion: ClientSuggestion, appendToLastParagr
     let firstSuggestionKey: NodeKey | null = null;
     let totalFakeLength = 0;
 
-    const addition = suggestion.originalText.length === 0;
+    const addition = suggestion.startCharacter === suggestion.endCharacter;
     const removal = suggestion.newText.length === 0;
     
     const setFormats = suggestion.formats || [];
@@ -455,7 +455,7 @@ function $createSuggestionNodes(suggestion: ClientSuggestion, appendToLastParagr
         
         console.log(suggestion, "doesnt need striketrhoguh")
 
-        const text = suggestion.accepted ? suggestion.newText : suggestion.originalText;
+        const text = suggestion.newText;
         const lines = text.split("\n");
 
         console.log("Lines", lines);

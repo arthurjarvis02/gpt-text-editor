@@ -56,7 +56,7 @@ function groupChanges(changes: Change[]): Change[][] {
 
                 if (!prevChange.added && !prevChange.removed && prevChange.value.replaceAll(" ", "").length !== 0) {
                 
-                    startNewGroup(); // Only include constant whitespace between changes, not any more
+                    startNewGroup(); // Only include constant spaces between changes, not any more
 
                 } else if (currentGroup.length == 1 && !prevChange.added && !prevChange.removed) {
 
