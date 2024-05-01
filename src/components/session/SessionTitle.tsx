@@ -10,7 +10,7 @@ export default function SessionTitle({className, sessionId, ...props}: {sessionI
 
     return (
         !loading && session &&
-            <h1 className={cn({italic: !loading && !session.title}, className)} {...props}>
+            <h1 className={cn({italic: !loading && !session.title}, "truncate", className)} {...props}>
                 {session.title || "Untitled"}
             </h1>
     );

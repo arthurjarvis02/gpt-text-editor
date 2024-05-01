@@ -13,7 +13,7 @@ export default function Session({params: {sessionId}}: {params: {sessionId: stri
                 children={
                     <div className="flex">
                         <SessionTitle sessionId={sessionId} className="text-xl font-bold" />
-                        <RenameSessionButton sessionId={sessionId} className="ml-2" />
+                        <RenameSessionButton sessionId={sessionId} className="ml-1 mr-2" />
                     </div>
                 }
                 controls={

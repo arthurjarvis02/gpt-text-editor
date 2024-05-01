@@ -6,7 +6,7 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import { Input } from "../ui/input";
 import { useEffect, useState } from "react";
 import { updateSession } from "@/lib/features/sessions/sessionsSlice";
-import { Pencil } from "lucide-react";
+import { FilePen, Pencil } from "lucide-react";
 
 export default function RenameSessionButton({sessionId, ...props}: {sessionId: string} & ButtonProps) {
 
@@ -42,7 +42,7 @@ export default function RenameSessionButton({sessionId, ...props}: {sessionId: s
             <DialogTrigger asChild>
                 {!loading &&
                         <Button size="iconXs" variant="ghost" {...props}>
-                            <Pencil className="h-4 w-4" />
+                            <FilePen className="h-4 w-4" />
                         </Button>
                 }
             </DialogTrigger>

@@ -16,21 +16,6 @@ export default class SpacerTextNode extends TextNode {
         "text/xml"
     );
 
-    // static STRIKETHROUGH_ICON = new DOMParser().parseFromString(
-    //     `<svg xmlns="http://www.w3.org/2000/svg" 
-    //         viewBox="0 0 24 24" 
-    //         fill="none" 
-    //         stroke-width="3" 
-    //         stroke-linecap="round" 
-    //         stroke-linejoin="round" 
-    //         class="lucide lucide-corner-down-left inline w-3 h-3 stroke-gray-400">
-    //             <polyline points="9 14 4 19 9 24"/>
-    //             <path d="M20 0v15a4 4 0 0 1-4 4H4"/>
-    //             <path d="M0 11.2 H24"/>
-    //         </svg>`,
-    //     "text/xml"
-    // );
-
     static REJECTED_ADDITION_ICON = new DOMParser().parseFromString(
         `<svg 
             xmlns="http://www.w3.org/2000/svg"
@@ -62,6 +47,11 @@ export default class SpacerTextNode extends TextNode {
             <path d="m15 5 4 4"/>
             <path d="M0 0 L 24 24"/>
         </svg>`,
+        "text/xml"
+    )
+
+    static SPARKLES_ICON = new DOMParser().parseFromString(
+        ``,
         "text/xml"
     )
 

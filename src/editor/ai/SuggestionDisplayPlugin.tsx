@@ -168,12 +168,23 @@ export default function SuggestionDisplayPlugin() {
                     const originalContent = $extractSelection(splice);
                     dispatch(setOriginalContent({id: suggestion.id, originalContent}));
                     console.log("Original content:", originalContent);
+                    console.log("Nodes:", splice.getNodes());
 
+
+                    const textNodesNonEmpty =  originalContent.flat().filter(node => node.text.length !== 0)
                     const formats: TextFormatType[] = [];
 
-                    for (const format of ["bold", "italic", "underline"] as TextFormatType[]) {
+                    if (textNodesNonEmpty.length > 0){
+                        for (const format of ["bold", "italic", "underline"] as TextFormatType[]) {
 
-                        splice.getNodes().filter($isTextNode).every(node => node.hasFormat(format)) && formats.push(format);
+                            // splice.getNodes()
+                            //     .filter($isTextNode)
+                            //     .filter(node => (node as TextNode).getTextContentSize() > 0)
+                            //     .every(node => node.hasFormat(format)) && formats.push(format);
+                        
+                            textNodesNonEmpty.every(node => TextNode.importJSON(node).hasFormat(format)) 
+                            && formats.push(format);
+                        }
                     }
 
                     console.log(splice.getNodes(), formats);
