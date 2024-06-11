@@ -259,7 +259,7 @@ export default function SuggestionDisplayPlugin() {
         dispatch(onceRendered());
 
     }, [suggestions]);
-
+    
     return (
         <>
             <NodeEventPlugin
@@ -437,7 +437,7 @@ function $createSuggestionNodes(suggestion: ClientSuggestion, appendToLastParagr
             for (let i = 0; i < suggestion.originalContent.length; i++) {
 
                 const node = $createParagraphNode();
-                const suggestionNode = $createSuggestionNode(suggestion.id, suggestion.accepted);
+                const suggestionNode = $createSuggestionNode(suggestion.id, suggestion.accepted, false, i !== 0, (i !== suggestion.originalContent.length - 1 - (suggestion.originalContent[suggestion.originalContent.length - 1].length === 0 || suggestion.originalContent[suggestion.originalContent.length - 1][0].text.length === 0 ? 1 : 0)));
 
                 suggestionNode.append(...suggestion.originalContent[i].map(jsonTextNode => TextNode.importJSON(jsonTextNode)));
             
@@ -476,7 +476,7 @@ function $createSuggestionNodes(suggestion: ClientSuggestion, appendToLastParagr
             const line = lines[i];
 
             const node = $createParagraphNode();
-            const suggestionNode = $createSuggestionNode(suggestion.id, suggestion.accepted);
+            const suggestionNode = $createSuggestionNode(suggestion.id, suggestion.accepted, false, i !== 0, (i !== lines.length - 1 - (lines[lines.length - 1].length === 0 || lines[lines.length - 1].length === 0 ? 1 : 0)));
 
             const textNode = $createTextNode(line);
             setFormats.forEach(format => textNode.toggleFormat(format));
