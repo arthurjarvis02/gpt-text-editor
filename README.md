@@ -19,4 +19,6 @@ A rich text editor web app allowing you to incorporate AI suggestions into a doc
 - [ ] Dark mode
 
 ### Setup
-Requires [OpenAI API key](https://platform.openai.com/api-keys) inside ```.env.local```
+- Requires [OpenAI API key](https://platform.openai.com/api-keys) inside ```.env.local```
+- Run ```pnpm install``` to install dependencies
+- Run ```pnpm run build``` then ```pnpm run start``` to start local server
