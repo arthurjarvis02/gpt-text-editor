@@ -18,7 +18,7 @@ export default function FormatToggle({format, ...props}: {format: TextFormatType
 
         $isRangeSelection(selection) && setIsFormatActive(selection.hasFormat(format));
 
-    }, [editor]);
+    }, [editor, format]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
     useEffect(() => {
 

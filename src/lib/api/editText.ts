@@ -71,7 +71,7 @@ function groupChanges(changes: Change[]): Change[][] {
                 const prevChange = currentGroup[currentGroup.length - 1];
                 const punctuation = [".", "!", "?"]
 
-                if (!change.value.trim()) { // If current value is a space after a change and possibly before a change
+                if (change.value.replaceAll(" ", "").length == 0) { // If current value is a space after a change and possibly before a change
 
                     if (currentGroup.length > 1) {
 

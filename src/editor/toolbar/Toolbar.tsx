@@ -11,7 +11,7 @@ import CommandButton from "./CommandButton";
 
 export default function Toolbar() {
 
-    const [editor] = useLexicalComposerContext();
+    
 
     return (
         <div className="flex gap-1 items-center">

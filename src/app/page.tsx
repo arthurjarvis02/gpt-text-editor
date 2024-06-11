@@ -10,14 +10,13 @@ export default function Home() {
     return (
         <>
             <TitleBar
-                children={
-                    <h1 className="text-xl font-bold">Project</h1>
-                }
                 controls={
                     <NewSessionButton>
                     </NewSessionButton>
                 } 
-            />
+            >
+                <h1 className="text-xl font-bold">GPT Text Editor</h1>
+            </TitleBar>
 
             <div className="p-4">
                 <SessionBrowserSurface />

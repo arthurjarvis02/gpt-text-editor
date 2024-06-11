@@ -27,7 +27,7 @@ export default function EditorSurface({sessionId}: {sessionId: string}) {
 
     return (
         <div className="w-11/12 md:w-10/12 lg:w-9/12 xl:w-7/12 mx-auto relative">
-            <Editor session={session} className="bg-card rounded-lg border outline-none shadow-sm focus:shadow-md p-16 relative z-10" />
+            <Editor session={session} className="bg-card rounded-lg border outline-none shadow-sm focus:shadow-md p-16 relative z-10 min-h-[750px]" />
         </div>
     )
 }

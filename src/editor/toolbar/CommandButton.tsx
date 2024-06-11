@@ -16,7 +16,7 @@ export default function CommandButton<T>({enabledCommand, clickCommand, getClick
         console.log(enabledCommand, enabled);
         return true;
 
-    }, COMMAND_PRIORITY_NORMAL), [editor]);
+    }, COMMAND_PRIORITY_NORMAL), [editor, enabledCommand]);
 
     return <Button disabled={!enabled} onClick={() => editor.dispatchCommand(clickCommand, getClickPayload())} {...props} />;
 }

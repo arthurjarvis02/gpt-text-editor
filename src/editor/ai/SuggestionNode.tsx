@@ -1,19 +1,24 @@
 import { ClientSuggestion } from "@/lib/types";
 import { EditorConfig, ElementNode, LexicalEditor, LexicalNode, NodeKey, SerializedElementNode, SerializedLexicalNode } from "lexical";
+import { boolean } from "zod";
 
 export default class SuggestionNode extends ElementNode {
 
     suggestionId: string;
     accepted: boolean;
     strikethrough: boolean;
+    continueLeft: boolean;
+    continueRight: boolean;
 
-    constructor(suggestionId: string, accepted: boolean, strikethrough: boolean, key?: NodeKey) {
+    constructor(suggestionId: string, accepted: boolean, strikethrough: boolean, continueLeft: boolean, continueRight:boolean, key?: NodeKey) {
 
         super(key);
 
         this.suggestionId = suggestionId;
         this.accepted = accepted;
         this.strikethrough = strikethrough;
+        this.continueLeft = continueLeft;
+        this.continueRight = continueRight;
     }
 
     static getType(): string {
@@ -23,14 +28,16 @@ export default class SuggestionNode extends ElementNode {
 
     static clone(node: SuggestionNode): SuggestionNode {
 
-        return new SuggestionNode(node.suggestionId, node.accepted, node.strikethrough, node.__key);
+        return new SuggestionNode(node.suggestionId, node.accepted, node.strikethrough, node.continueLeft, node.continueRight, node.__key);
     }
     
     createDOM(_config: EditorConfig, _editor: LexicalEditor): HTMLElement {
         
         const container = document.createElement("span");
-        container.classList.add("cursor-pointer", "rounded", "py-0.5", "-my-0.5");
+        container.classList.add("cursor-pointer", "py-0.5", "-my-0.5");
         container.classList.add(this.accepted ? "bg-green-100" : "bg-red-100");
+        this.continueLeft || container.classList.add("rounded-s");
+        this.continueRight || container.classList.add("rounded-e");
         this.strikethrough && container.classList.add("line-through");
         this.strikethrough && container.classList.add("text-gray-400");
 
@@ -38,24 +45,6 @@ export default class SuggestionNode extends ElementNode {
     }
 
     updateDOM(_prevNode: SuggestionNode, _dom: HTMLElement, _config: EditorConfig): boolean {
-     
-        console.log("Updating dom")
-
-        if (_prevNode.accepted !== this.accepted) {
-
-            _dom.classList.remove(_prevNode.accepted ? "bg-green-100" : "bg-red-100");
-            _dom.classList.add(this.accepted ? "bg-green-100" : "bg-red-100");
-
-            return false;
-        }
-
-        if (_prevNode.strikethrough !== this.strikethrough) {
-            
-            _dom.classList.toggle("text-gray-400");
-            _dom.classList.toggle("line-through");
-
-            return false;
-        }
 
         return true;
     }
@@ -92,9 +81,9 @@ export function $isSuggestionNode(node: LexicalNode | null | undefined): node is
     return node instanceof SuggestionNode;
 }
 
-export function $createSuggestionNode(suggestionId: string, accepted: boolean, strikethrough?: boolean): SuggestionNode {
+export function $createSuggestionNode(suggestionId: string, accepted: boolean, strikethrough?: boolean, continueLeft?: boolean, continueRight?: boolean): SuggestionNode {
 
     const strike = strikethrough === undefined ? false : strikethrough;
 
-    return new SuggestionNode(suggestionId, accepted, strike);
+    return new SuggestionNode(suggestionId, accepted, strike, continueLeft || false, continueRight || false);
 }

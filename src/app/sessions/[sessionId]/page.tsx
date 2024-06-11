@@ -10,16 +10,16 @@ export default function Session({params: {sessionId}}: {params: {sessionId: stri
     return (
         <>
             <TitleBar
-                children={
-                    <div className="flex">
-                        <SessionTitle sessionId={sessionId} className="text-xl font-bold" />
-                        <RenameSessionButton sessionId={sessionId} className="ml-1 mr-2" />
-                    </div>
-                }
                 controls={
                     <div id="editor-toolbar" />
                 }
-            />
+            >
+                <div className="flex">
+                    <SessionTitle sessionId={sessionId} className="text-xl font-bold pr-1" />
+                    <RenameSessionButton sessionId={sessionId} className="mr-2" />
+                </div>
+            </TitleBar>
+            
             <div className="p-4">
                 <EditorSurface sessionId={sessionId} />
             </div>

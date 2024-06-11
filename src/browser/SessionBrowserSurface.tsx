@@ -3,7 +3,6 @@
 import { useAppSelector } from "@/lib/hooks";
 import SessionCard from "./SessionCard";
 import LoadingSurface from "@/components/LoadingSurface";
-import NewSessionButton from "@/components/session/NewSessionButton";
 
 export default function SessionBrowserSurface() {
 
