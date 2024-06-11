@@ -4,7 +4,7 @@
 
 A rich text editor web app allowing you to incorporate AI suggestions into a document
 
-![UI](https://raw.githubusercontent.com/arthurjarvis02/gpt-text-editor/master/ui.png)
+![UI](ui.png)
 
 </div>
 
