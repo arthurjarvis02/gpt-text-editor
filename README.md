@@ -1,12 +1,8 @@
-<div align="center">
+<h1 align="center">✨ GPT Text Editor</h1>
 
-# ✨ GPT Text Editor
-
-A rich text editor web app allowing you to incorporate AI suggestions into a document
+<p align="center">A rich text editor web app allowing you to incorporate AI suggestions into a document</p>
 
 ![UI](ui.png)
-
-</div>
 
 ### Features
 - [x] Rich text editor
